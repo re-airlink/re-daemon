@@ -1,15 +1,25 @@
 {
   "name": "daemon",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "clean": "node -e \"const { existsSync, mkdirSync, readdirSync, rmSync } = require('fs'); if (!existsSync('dist')) mkdirSync('dist'); readdirSync('dist').forEach(dir => { if (dir !== 'storage') rmSync(`dist/${dir}`, { recursive: true, force: true }); });\"",
+    "start:dev": "npm run clean && npm run build & npm run start"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-basic-auth": "^1.2.1"
   }
 }
