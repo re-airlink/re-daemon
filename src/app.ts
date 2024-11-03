@@ -13,7 +13,7 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(basicAuth({
-    users: { 'Airlink': config.key ?? 'default_key' },
+    users: { 'Airlink': config.key! },
     challenge: true,
 }));
 
@@ -27,8 +27,10 @@ function loadRouters(): void {
                 try {
                     const routerPath = path.join(routesDir, file);
                     const router = require(routerPath);
-                    if (typeof router === 'function' && router.name === 'router') {
-                        app.use('/', router);
+                    const actualRouter = router.default || router;
+                    
+                    if (typeof actualRouter === 'function') {
+                        app.use('/', actualRouter);
                     }
                 } catch (error) {
                     console.error('Error loading router:', error);
@@ -39,21 +41,8 @@ function loadRouters(): void {
     });
 }
 
-loadRouters();
 
-app.get('/', async (req: Request, res: Response) => {
-    try {
-        const response = {
-            versionFamily: 1,
-            versionRelease: 'Airlink ' + config.version,
-            online: true,
-            remote: config.remote,
-        };
-        res.json(response);
-    } catch {
-        res.status(500).send('Internal Server Error');
-    }
-});
+loadRouters();
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     res.status(500).send('Something has... gone wrong!');
