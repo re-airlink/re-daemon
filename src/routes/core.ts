@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { meta } from '../../storage/config.json'
 
 const router = Router();
 let config = process.env
@@ -7,7 +8,7 @@ router.get('/', async (req: Request, res: Response) => {
     try {
         const response = {
             versionFamily: 1,
-            versionRelease: 'Airlink ' + config.version,
+            versionRelease: 'Airlinkd ' + meta.version,
             status: 'Online',
             remote: config.remote,
         };
