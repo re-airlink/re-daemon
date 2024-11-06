@@ -6,59 +6,70 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
+/**
+ * Initializes the application by performing necessary checks for Docker.
+ *
+ * 
+ * This function checks if Docker is installed and running on the system.
+ * If Docker is not installed, it logs an error message and throws an error.
+ * If Docker is not running, it logs an error message and throws an error.
+ *
+ * 
+ * @throws Will throw an error if Docker is not installed or not running.
+ */
 export async function init() {
-    async function checkDockerInstall() {
-      const command = process.platform === 'win32' ? 'docker --version' : 'which docker';
-  
-      try {
-        await execAsync(command);
-        console.log("Docker is installed");
-      } catch (error) {
-        console.error("Docker isn't installed, install docker and try again");
-        throw error;
-      }
-    }
-  
-    async function checkDockerLaunch() {
-      const command = 'docker ps';
-  
-      try {
-        await execAsync(command);
-        console.log("Docker is running");
-      } catch (error) {
-        console.error("Docker isn't running, start docker and try again");
-        throw error;
-      }
-    }
-  
+    const isDockerInstalled = async () => {
+        const command = process.platform === 'win32' ? 'docker --version' : 'which docker';
+
+        try {
+            await execAsync(command);
+        } catch (error) {
+            console.error("Docker is not installed. Please install Docker and try again.");
+            throw error;
+        }
+    };
+
+    const isDockerRunning = async () => {
+        const command = 'docker ps';
+
+        try {
+            await execAsync(command);
+        } catch (error) {
+            console.error("Docker is not running. Please start Docker and try again.");
+            throw error;
+        }
+    };
+    
     try {
-      await checkDockerInstall();
-      await checkDockerLaunch();
+        await isDockerInstalled();
+        await isDockerRunning();
     } catch (error) {
+        console.error("Initialization error:", error);
       console.error("Init error : ", error);
     }
 }
 
+/**
+ * Loads all route files from the routes directory and adds them to the express app.
+ * @param {express.Application} app The express app to add the routes to.
+ */
 export function loadRouters(app: express.Application): void {
   const routesDir = path.join(__dirname, 'routes');
-  fs.readdir(routesDir, (err, files) => {
-      if (err) return;
+  const files = fs.readdirSync(routesDir);
 
-      files.forEach((file) => {
-          if (file.endsWith('.js')) {
-              try {
-                  const routerPath = path.join(routesDir, file);
-                  const router = require(routerPath);
-                  const actualRouter = router.default || router;
-                  
-                  if (typeof actualRouter === 'function') {
-                      app.use('/', actualRouter);
-                  }
-              } catch (error) {
-                  console.error('Error loading router:', error);
-                  process.exit(1);
+  files
+      .filter(file => file.endsWith('.js'))
+      .forEach(file => {
+          try {
+              const routerPath = path.join(routesDir, file);
+              const { default: router } = require(routerPath);
+
+              if (typeof router === 'function') {
+                  app.use('/', router);
               }
+          } catch (error) {
+              console.error('Error loading router:', error);
+              process.exit(1);
           }
       });
-  });
 }
