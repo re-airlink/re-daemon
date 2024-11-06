@@ -45,7 +45,6 @@ export async function init() {
         await isDockerRunning();
     } catch (error) {
         console.error("Initialization error:", error);
-      console.error("Init error : ", error);
     }
 }
 
@@ -54,7 +53,7 @@ export async function init() {
  * @param {express.Application} app The express app to add the routes to.
  */
 export function loadRouters(app: express.Application): void {
-  const routesDir = path.join(__dirname, 'routes');
+  const routesDir = path.join(__dirname, '../routes');
   const files = fs.readdirSync(routesDir);
 
   files

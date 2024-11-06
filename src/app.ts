@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 dotenv.config();
 
 import express, { Request, Response, NextFunction } from 'express';
@@ -5,7 +6,6 @@ import basicAuth from 'express-basic-auth';
 const app = express();
 
 import bodyParser from 'body-parser';
-import dotenv from 'dotenv';
 import { init, loadRouters } from './handlers/appHandlers';
 
 let config = process.env
