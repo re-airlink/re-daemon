@@ -62,7 +62,8 @@ const deleteContainer = async (id: string): Promise<void> => {
 export const startContainer = async (
     id: string,
     image: string,
-    env: Record<string, string> = {}
+    env: Record<string, string> = {},
+    ports: Record<string, number> = {}
 ): Promise<void> => {
     try {
         console.log(`Deleting existing container with ID: ${id} (if any)...`);
@@ -75,9 +76,10 @@ export const startContainer = async (
         const volumePath = initContainer(id);
         const envOptions = Object.entries(env).map(([key, value]) => `-e ${key}=${value}`).join(' ');
         const volumeOption = `-v ${volumePath}:/data`;
+        const portsOption = `-p ${ports}`;
 
         console.log(`Creating container ${id}...`);
-        await executeCommand(`docker run -d -it --name ${id} ${volumeOption} ${envOptions} ${image}`);
+        await executeCommand(`docker run -d -it --name ${id} ${volumeOption} ${portsOption} ${envOptions} ${image}`);
         console.log(`Container ${id} successfully started.`);
     } catch (error) {
         console.error(`Failed to start container ${id}: ${error}`);
