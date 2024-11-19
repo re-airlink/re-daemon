@@ -110,37 +110,27 @@ export const attachToContainer = (id: string): void => {
 };
 
 export const sendCommandToContainer = (id: string, command: string): void => {
-    if (!id || !command) {
-        console.error('Container ID and command must be provided.');
-        return;
-    }
-
     try {
-        const dockerExec = spawn('docker', ['exec', '-i', id, 'sh', '-c', command], {
-            stdio: ['pipe', 'pipe', 'pipe'], // Use custom pipes for output handling
+        const dockerAttach = spawn('docker', ['attach', id], {
+            stdio: ['pipe', 'inherit', 'inherit']
         });
 
-        dockerExec.stdout.on('data', (data) => {
-            console.log(`Container ${id} stdout: ${data.toString()}`);
+        dockerAttach.stdin.write(`${command}\n`);
+        dockerAttach.stdin.end();
+
+        dockerAttach.on('error', (error) => {
+            console.error(`Failed to attach to container ${id}: ${error.message}`);
         });
 
-        dockerExec.stderr.on('data', (data) => {
-            console.error(`Container ${id} stderr: ${data.toString()}`);
-        });
-
-        dockerExec.on('error', (error) => {
-            console.error(`Failed to execute command on container ${id}: ${error.message}`);
-        });
-
-        dockerExec.on('close', (code) => {
+        dockerAttach.on('close', (code) => {
             if (code === 0) {
-                console.log(`Command '${command}' executed successfully in container ${id}.`);
+                console.log(`Command '${command}' sent successfully to container ${id}.`);
             } else {
-                console.error(`Docker exec exited with code ${code} for container ${id}.`);
+                console.error(`Attach process for container ${id} exited with code ${code}.`);
             }
         });
     } catch (error) {
-        console.error(`Error in sendCommandToContainer: f`);
+        console.error(`Error in sendCommandToContainer: ${error}`);
     }
 };
 
