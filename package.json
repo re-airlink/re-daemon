@@ -6,7 +6,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "clean": "node -e \"const { existsSync, mkdirSync, readdirSync, rmSync } = require('fs'); if (!existsSync('dist')) mkdirSync('dist'); readdirSync('dist').forEach(dir => { if (dir !== 'storage') rmSync(`dist/${dir}`, { recursive: true, force: true }); });\"",
-    "start:dev": "npm run clean && npm run build & npm run start"
+    "start:dev": "npm run build & npm run start"
   },
   "keywords": [],
   "author": "",
