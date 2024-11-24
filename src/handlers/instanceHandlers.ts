@@ -100,7 +100,6 @@ export const startContainer = async (
             OpenStdin: true,
             Tty: true,
         }).then((container) => container.start());
-
         console.log(`Container ${id} successfully started.`);
     } catch (error) {
         console.error(`Failed to start container ${id}: ${error}`);
@@ -144,7 +143,7 @@ export const sendCommandToContainer = async (id: string, command: string): Promi
         stream.end();
 
         stream.on('data', (data: Buffer) => {
-            console.log(`[${id}] STDOUT: ${data.toString()}`);
+            //console.log(`[${id}] STDOUT: ${data.toString()}`);
         });
 
         stream.on('error', (error: Error) => {
