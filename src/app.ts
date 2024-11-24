@@ -10,6 +10,8 @@ import { init, loadRouters } from './handlers/appHandlers';
 
 let config = process.env
 
+process.env.dockerSocket = process.platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock";
+
 // Init
 init();
 

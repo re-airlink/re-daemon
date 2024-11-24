@@ -13,11 +13,13 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/dockerode": "^3.3.32",
     "@types/express": "^5.0.0",
     "typescript": "^5.6.3"
   },
   "dependencies": {
     "body-parser": "^1.20.3",
+    "dockerode": "^4.0.2",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-basic-auth": "^1.2.1"
