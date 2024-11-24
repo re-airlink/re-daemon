@@ -10,7 +10,7 @@ import {
 const router = Router();
 
 router.post('/container/start', async (req: Request, res: Response) => {
-    const { id, image, ports, env } = req.body;
+    const { id, image, ports, env, Memory, Cpu } = req.body;
 
     if (!id || !image) {
         res.status(400).json({ error: 'Container ID and Image are required.' });
@@ -18,7 +18,7 @@ router.post('/container/start', async (req: Request, res: Response) => {
     }
 
     try {
-        await startContainer(id, image, env, ports);
+        await startContainer(id, image, env, ports, Memory, Cpu);
         res.status(200).json({ message: `Container ${id} started successfully.` });
     } catch (error) {
         console.error(`Error starting container: ${error}`);
