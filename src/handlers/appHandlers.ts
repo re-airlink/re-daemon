@@ -39,10 +39,33 @@ export async function init() {
             throw error;
         }
     };
-    
+
+    const isDockerModemFix = async () => {
+        // Dockerode Fix for Windows
+        if (process.platform === 'win32') {
+            console.log(__dirname);
+            const lockFilePath = path.join(__dirname, "..", '..', 'node_modules', 'docker-modem', 'lib', 'docker_modem_fix.lock');
+            const modemPath = path.join(__dirname, "..", '..', 'node_modules', 'docker-modem', 'lib', 'modem.js');
+            const modemUrl = 'https://raw.githubusercontent.com/achul123/docker-modem/refs/heads/master/lib/modem.js';
+        
+            if (!fs.existsSync(lockFilePath)) {
+                console.log('Fixing docker-modem for windows...');
+                // download the file and save in /node_modules/docker-modem/lib/modem.js
+                const response = await fetch(modemUrl);
+                const data = await response.text();
+                await fs.promises.writeFile(modemPath, data, { encoding: 'utf8' });
+            
+                // Create the lock file to prevent future executions
+                await fs.promises.writeFile(lockFilePath, 'Docker-modem fix applied', { encoding: 'utf8' });
+                console.log('Docker-modem fix applied');
+            }
+        }
+    }
+
     try {
         await isDockerInstalled();
         await isDockerRunning();
+        await isDockerModemFix();
     } catch (error) {
         console.error("Initialization error:", error);
     }
