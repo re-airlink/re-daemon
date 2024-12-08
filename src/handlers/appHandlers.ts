@@ -76,6 +76,7 @@ export async function init() {
  * @param {express.Application} app The express app to add the routes to.
  */
 export function loadRouters(app: express.Application): void {
+
   const routesDir = path.join(__dirname, '../routes');
   const files = fs.readdirSync(routesDir);
 

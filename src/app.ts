@@ -4,13 +4,16 @@ dotenv.config();
 import express, { Request, Response, NextFunction } from 'express';
 import basicAuth from 'express-basic-auth';
 const app = express();
+import http from 'http';
+
+import { initializeWebSocketServer } from './handlers/instanceHandlers';
+
+const server = http.createServer(app);
 
 import bodyParser from 'body-parser';
 import { init, loadRouters } from './handlers/appHandlers';
 
 let config = process.env
-
-process.env.dockerSocket = process.platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock";
 
 // Init
 init();
@@ -31,9 +34,11 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error(err);
 });
 
+initializeWebSocketServer(server);
+
 const port = config.port;
-setTimeout(() => {
-    app.listen(port, () => {
+setTimeout(function (){
+    server.listen(port, () => {
         console.log(`Server is running on http://localhost:${port}`);
     });
 }, 1000);

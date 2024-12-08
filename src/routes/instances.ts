@@ -1,16 +1,21 @@
 import { Router, Request, Response } from 'express';
+import WebSocket from 'ws';
 import {
     attachToContainer,
     killContainer,
     sendCommandToContainer,
     startContainer,
     stopContainer,
+    attachToContainerWithWS,
 } from '../handlers/instanceHandlers';
 
 const router = Router();
 
+
 router.post('/container/start', async (req: Request, res: Response) => {
     const { id, image, ports, env, Memory, Cpu } = req.body;
+
+    console.log(env);
 
     if (!id || !image) {
         res.status(400).json({ error: 'Container ID and Image are required.' });

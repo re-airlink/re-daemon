@@ -1,8 +1,10 @@
 import Docker from 'dockerode';
+import WebSocket, { Server } from 'ws';
 import fs from 'fs';
 import path from 'path';
+import { IncomingMessage } from 'http';
 
-const docker = new Docker({ socketPath: process.env.dockerSocket });
+const docker = new Docker({ socketPath: process.platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock" });
 
 const checkDirectoryExistance = (dir: string): boolean => {
     return fs.existsSync(dir);
@@ -33,6 +35,38 @@ export const initContainer = (id: string): string => {
 
     console.log(`Initialization complete for container: ${id}`);
     return volumePath;
+};
+
+export const attachToContainerWithWS = async (id: string, ws: WebSocket): Promise<void> => {
+    try {
+        console.log(`Attaching to container ${id}...`);
+        const container = docker.getContainer(id);
+
+        const logStream = await container.logs({
+            follow: true,
+            stdout: true,
+            stderr: true,
+            tail: 25
+        });
+
+        logStream.on('data', chunk => {
+            ws.send(chunk.toString());
+        });
+
+        ws.on('close', () => {
+            console.log(`WebSocket connection closed for container ${id}`);
+        });
+
+        console.log(`Attached to container ${id} successfully.`);
+    } catch (error) {
+        console.error(`Failed to attach to container ${id}:`, error);
+        
+        if (ws.readyState === WebSocket.OPEN) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            ws.send(JSON.stringify({ error: `Failed to attach to container ${id}: ${errorMessage}` }));
+        }
+    }
+    
 };
 
 const deleteContainer = async (id: string): Promise<void> => {
@@ -196,3 +230,55 @@ export const killContainer = async (id: string): Promise<void> => {
         console.error(`Failed to kill container ${id}: ${error}`);
     }
 };
+
+export const initializeWebSocketServer = (server: any) => {
+    const wss = new Server({ server });
+
+    wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+        let isAuthenticated = false;
+
+        ws.on('message', async (message: WebSocket.RawData) => {
+            let msg;
+            let messageString = message.toString();
+
+            try {
+                msg = JSON.parse(messageString);
+            } catch (error) {
+                ws.send('Invalid JSON');
+                return;
+            }
+
+            const containerId = req.url?.split('/')[2];
+
+            if (msg.event === 'auth' && msg.args && msg.args[0] === process.env.key) {
+                if (!isAuthenticated) {
+                    isAuthenticated = true;
+                    if (containerId) {
+                        await attachToContainerWithWS(containerId, ws);
+                    }
+                } else {
+                    // nothing ig
+                }
+            } else if (msg.event !== 'auth' && !isAuthenticated) {
+                ws.send(JSON.stringify({ error: 'Authentication required' }));
+                ws.close(1008, 'Authentication required');
+                return;
+            }
+
+            if (isAuthenticated && containerId && msg.event === 'CMD') {
+                console.log(`Command received: ${msg.command}`);
+                sendCommandToContainer(containerId, msg.command);
+            }
+        });
+
+        ws.on('close', () => {
+            isAuthenticated = false;
+            console.log('WebSocket connection closed. Authentication reset.');
+        });
+
+        ws.on('error', (error) => {
+            console.log('WebSocket error:', error);
+        });
+    });
+};
+
