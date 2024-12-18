@@ -29,6 +29,24 @@ const getDirectorySize = async (directory: string): Promise<number> => {
     return totalSize;
 };
 
+const getFileSize = async (filePath: string): Promise<number> => {
+    const stats = await fs.stat(filePath);
+    return stats.size;
+};
+
+const getFileContent = async (filePath: string): Promise<string | null> => {
+    try {
+        const stats = await fs.stat(filePath);
+        if (stats.isFile()) {
+            const fileContent = await fs.readFile(filePath, 'utf-8');
+            return fileContent;
+        }
+        return null;
+    } catch (error) {
+        return null;
+    }
+};
+
 const afs = {
     async list(id: string, relativePath: string = '/', filter?: string) {
         const currentTime = Date.now();
@@ -71,8 +89,7 @@ const afs = {
                     size = await getDirectorySize(dirPath);
                 } else {
                     const filePath = path.join(targetDirectory, dirent.name);
-                    const stats = await fs.stat(filePath);
-                    size = stats.size;
+                    size = await getFileSize(filePath);
                 }
 
                 return {
@@ -92,9 +109,51 @@ const afs = {
 
             rateData.cache = limitedResults;
             return limitedResults;
-        } catch (error) {
+        } catch (error: unknown) {
             if (error instanceof Error) {
                 throw new Error(`Error listing directory: ${error.message}`);
+            } else {
+                throw new Error('An unknown error occurred.');
+            }
+        }
+    },
+
+    async getFileSizeHandler(id: string, relativePath: string = '/'): Promise<number> {
+        try {
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const filePath = sanitizePath(baseDirectory, relativePath);
+            return await getFileSize(filePath);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                throw new Error(`Error getting file size: ${error.message}`);
+            } else {
+                throw new Error('An unknown error occurred.');
+            }
+        }
+    },
+
+    async getDirectorySizeHandler(id: string, relativePath: string = '/'): Promise<number> {
+        try {
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const dirPath = sanitizePath(baseDirectory, relativePath);
+            return await getDirectorySize(dirPath);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                throw new Error(`Error getting directory size: ${error.message}`);
+            } else {
+                throw new Error('An unknown error occurred.');
+            }
+        }
+    },
+
+    async getFileContentHandler(id: string, relativePath: string = '/'): Promise<string | null> {
+        try {
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const filePath = sanitizePath(baseDirectory, relativePath);
+            return await getFileContent(filePath);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                throw new Error(`Error getting file content: ${error.message}`);
             } else {
                 throw new Error('An unknown error occurred.');
             }
