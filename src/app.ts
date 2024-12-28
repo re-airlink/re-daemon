@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import basicAuth from 'express-basic-auth';
 const app = express();
 import http from 'http';
@@ -29,7 +29,7 @@ app.use(basicAuth({
 loadRouters(app);
 
 // Error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response) => {
     res.status(500).send('Something has... gone wrong!');
     console.error(err);
 });

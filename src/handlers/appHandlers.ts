@@ -43,7 +43,6 @@ export async function init() {
     const isDockerModemFix = async () => {
         // Dockerode Fix for Windows
         if (process.platform === 'win32') {
-            console.log(__dirname);
             const lockFilePath = path.join(__dirname, "..", '..', 'node_modules', 'docker-modem', 'lib', 'docker_modem_fix.lock');
             const modemPath = path.join(__dirname, "..", '..', 'node_modules', 'docker-modem', 'lib', 'modem.js');
             const modemUrl = 'https://raw.githubusercontent.com/achul123/docker-modem/refs/heads/master/lib/modem.js';

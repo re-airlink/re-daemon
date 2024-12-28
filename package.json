@@ -6,7 +6,8 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "clean": "node -e \"const { existsSync, mkdirSync, readdirSync, rmSync } = require('fs'); if (!existsSync('dist')) mkdirSync('dist'); readdirSync('dist').forEach(dir => { if (dir !== 'storage') rmSync(`dist/${dir}`, { recursive: true, force: true }); });\"",
-    "start:dev": "npm run build & npm run start"
+    "start:dev": "npm run build & npm run start",
+    "configure": "ts-node src/handlers/configure.ts --"
   },
   "keywords": [],
   "author": "",
@@ -16,8 +17,10 @@
     "@types/dockerode": "^3.3.32",
     "@types/express": "^5.0.0",
     "@types/express-ws": "^3.0.5",
+    "@types/node": "^22.10.2",
     "@types/ws": "^8.5.13",
-    "typescript": "^5.6.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2",
     "ws": "^8.18.0"
   },
   "dependencies": {
