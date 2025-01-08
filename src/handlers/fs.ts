@@ -158,6 +158,20 @@ const afs = {
                 throw new Error('An unknown error occurred.');
             }
         }
+    },
+
+    async writeFileContentHandler(id: string, relativePath: string, content: string): Promise<void> {
+        try {
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const filePath = sanitizePath(baseDirectory, relativePath);
+            await fs.writeFile(filePath, content);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                throw new Error(`Error writing file content: ${error.message}`);
+            } else {
+                throw new Error('An unknown error occurred.');
+            }
+        }
     }
 };
 

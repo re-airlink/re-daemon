@@ -6,14 +6,14 @@ import { IncomingMessage } from 'http';
 
 const docker = new Docker({ socketPath: process.platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock" });
 
-const checkDirectoryExistance = (dir: string): boolean => {
+const checkDirectoryExistence = (dir: string): boolean => {
     return fs.existsSync(dir);
 };
 
 export const initContainer = (id: string): string => {
     const directoryPath = path.join(__dirname, '../../volumes');
 
-    if (!checkDirectoryExistance(directoryPath)) {
+    if (!checkDirectoryExistence(directoryPath)) {
         try {
             fs.mkdirSync(directoryPath, { recursive: true });
             console.log(`Directory created: ${directoryPath}`);
@@ -24,7 +24,7 @@ export const initContainer = (id: string): string => {
 
     const volumePath = path.join(directoryPath, id);
 
-    if (!checkDirectoryExistance(volumePath)) {
+    if (!checkDirectoryExistence(volumePath)) {
         try {
             fs.mkdirSync(volumePath, { recursive: true });
             console.log(`Volume directory created: ${volumePath}`);
@@ -46,7 +46,7 @@ export const attachToContainerWithWS = async (id: string, ws: WebSocket): Promis
             follow: true,
             stdout: true,
             stderr: true,
-            tail: 25
+            tail: 100
         });
 
         logStream.on('data', chunk => {

@@ -30,7 +30,6 @@ loadRouters(app);
 
 // Error handler
 app.use((err: Error, req: Request, res: Response) => {
-    res.status(500).send('Something has... gone wrong!');
     console.error(err);
 });
 

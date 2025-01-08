@@ -108,4 +108,26 @@ router.get('/fs/file/content', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/fs/file/content', async (req: Request, res: Response) => {
+    const id = typeof req.body.id === 'string' ? req.body.id : undefined;
+    const relativePath = typeof req.body.path === 'string' ? req.body.path : '/';
+    const content = typeof req.body.content === 'string' ? req.body.content : '';
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required and must be a string.' });
+        return;
+    }
+
+    try {
+        await afs.writeFileContentHandler(id, relativePath, content);
+        res.json({ message: 'File content successfully saved.' });
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'An unknown error occurred.' });
+        }
+    }
+});
+
 export default router;
