@@ -130,4 +130,24 @@ router.post('/fs/file/content', async (req: Request, res: Response) => {
     }
 });
 
+router.delete('/fs/rm', async (req: Request, res: Response) => {
+    const id = typeof req.body.id === 'string' ? req.body.id : undefined;
+    const relativePath = typeof req.body.path === 'string' ? req.body.path : '/';
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required and must be a string.' });
+        return;
+    }
+    try {
+        await afs.rm(id, relativePath);
+        res.json({ message: 'File/Folder successfully removed.' });
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'An unknown error occurred.' });
+        }
+    } 
+});
+
 export default router;

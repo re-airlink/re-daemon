@@ -172,6 +172,28 @@ const afs = {
                 throw new Error('An unknown error occurred.');
             }
         }
+    },
+    async rm(id: string, relativePath: string): Promise<void> {
+        try {
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const targetPath = sanitizePath(baseDirectory, relativePath);
+    
+            const stat = await fs.lstat(targetPath);
+    
+            if (stat.isDirectory()) {
+                await fs.rm(targetPath, { recursive: true, force: true });
+            } else if (stat.isFile()) {
+                await fs.unlink(targetPath);
+            } else {
+                throw new Error('Path is neither a file nor a directory.');
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                throw new Error(`Error deleting path: ${error.message}`);
+            } else {
+                throw new Error('An unknown error occurred.');
+            }
+        }
     }
 };
 
