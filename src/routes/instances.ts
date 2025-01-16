@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
-import WebSocket from 'ws';
 import {
     attachToContainer,
     killContainer,
     sendCommandToContainer,
     startContainer,
     stopContainer,
-    attachToContainerWithWS,
+    deleteContainerAndVolume
 } from '../handlers/instanceHandlers';
+import fs from 'fs/promises';
 
 const router = Router();
 
@@ -96,6 +96,22 @@ router.post('/container/command', async (req: Request, res: Response) => {
     } catch (error) {
         console.error(`Error sending command to container: ${error}`);
         res.status(500).json({ error: `Failed to send command to container ${id}.` });
+    }
+});
+
+router.delete('/container/delete', async (req: Request, res: Response) => {
+    const { id } = req.body;
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required.' });
+        return;
+    }
+    try {
+        await deleteContainerAndVolume(id);
+        res.status(200).json({ message: `Container ${id} deleted successfully.` });
+    } catch (error) {
+        console.error(`Error deleting container: ${error}`);
+        res.status(500).json({ error: `Failed to delete container ${id}.` });
     }
 });
 

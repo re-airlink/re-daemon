@@ -3,6 +3,7 @@ import WebSocket, { Server } from 'ws';
 import fs from 'fs';
 import path from 'path';
 import { IncomingMessage } from 'http';
+import Dockerode from 'dockerode';
 
 const docker = new Docker({ socketPath: process.platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock" });
 
@@ -230,6 +231,25 @@ export const killContainer = async (id: string): Promise<void> => {
         console.error(`Failed to kill container ${id}: ${error}`);
     }
 };
+
+export const deleteContainerAndVolume = async (id: string): Promise<void> => {
+    try {
+        console.log(`Deleting container ${id}...`);
+        const container = docker.getContainer(id);
+        const containerInfo = await container.inspect().catch(() => null);
+        if (containerInfo) {
+            console.log(`Container ${id} exists. Deleting...`);
+            await deleteContainer(id);
+            const volumePath = path.join(__dirname, '../../volumes', id);
+            fs.rmSync(volumePath, { recursive: true, force: true });
+            console.log(`Container ${id} successfully deleted.`);
+        } else {
+            console.log(`Container ${id} does not exist.`);
+        }
+    } catch (error) {
+        console.error(`Failed to delete container ${id}: ${error}`);
+    }
+}
 
 export const initializeWebSocketServer = (server: any) => {
     const wss = new Server({ server });
