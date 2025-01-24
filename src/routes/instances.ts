@@ -5,12 +5,69 @@ import {
     sendCommandToContainer,
     startContainer,
     stopContainer,
-    deleteContainerAndVolume
+    deleteContainerAndVolume,
+    initContainer
 } from '../handlers/instanceHandlers';
-import fs from 'fs/promises';
+import afs from '../handlers/fs';
 
 const router = Router();
 
+router.post('/container/install', async (req: Request, res: Response) => {
+    const { id, scripts, env } = req.body;
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required.' });
+        return;
+    }
+
+    let environmentVariables: Record<string, string> =
+        typeof env === 'object' && env !== null ? { ...env } : {};
+
+    try {
+        await initContainer(id);
+
+        if (scripts && Array.isArray(scripts)) {
+            for (const script of scripts) {
+                const { url, fileName } = script;
+
+                if (!url || !fileName) {
+                    console.warn(`Invalid script entry: ${JSON.stringify(script)}`);
+                    continue;
+                }
+
+                // Replace ALVKT placeholders with environment variables
+                const regex = /\$ALVKT\((\w+)\)/g;
+                const resolvedUrl = url.replace(regex, (_: string, variableName: string) => {
+                    if (environmentVariables[variableName]) {
+                        return environmentVariables[variableName];
+                    } else {
+                        console.warn(`Variable "${variableName}" not found in environmentVariables.`);
+                        return '';
+                    }
+                });
+
+                if (!resolvedUrl) {
+                    console.warn(`Failed to resolve URL for script: ${JSON.stringify(script)}`);
+                    continue;
+                }
+
+                // Download the file using afs
+                try {
+                    await afs.download(id, resolvedUrl, fileName);
+                    console.log(`Downloaded ${fileName} from ${resolvedUrl} for container ${id}.`);
+                } catch (error) {
+                    console.error(`Error downloading file "${fileName}": ${error}`);
+                    throw new Error(`Failed to download ${fileName}`);
+                }
+            }
+        }
+
+        res.status(200).json({ message: `Container ${id} installed successfully.` });
+    } catch (error) {
+        console.error(`Error installing container: ${error}`);
+        res.status(500).json({ error: `Failed to install container ${id}.` });
+    }
+});
 
 router.post('/container/start', async (req: Request, res: Response) => {
     const { id, image, ports, env, Memory, Cpu, StartCommand } = req.body;

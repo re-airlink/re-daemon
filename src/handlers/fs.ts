@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
+import fetch from 'node-fetch'; // Ensure this is installed via npm
 import fileSpecifier from './util/fileSpecifier';
 
 const sanitizePath = (base: string, relativePath: string): string => {
@@ -173,13 +174,14 @@ const afs = {
             }
         }
     },
+
     async rm(id: string, relativePath: string): Promise<void> {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const targetPath = sanitizePath(baseDirectory, relativePath);
-    
+
             const stat = await fs.lstat(targetPath);
-    
+
             if (stat.isDirectory()) {
                 await fs.rm(targetPath, { recursive: true, force: true });
             } else if (stat.isFile()) {
@@ -192,6 +194,31 @@ const afs = {
                 throw new Error(`Error deleting path: ${error.message}`);
             } else {
                 throw new Error('An unknown error occurred.');
+            }
+        }
+    },
+
+    async download(id: string, url: string, relativePath: string): Promise<void> {
+        try {
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const filePath = sanitizePath(baseDirectory, relativePath);
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to download file from ${url}: ${response.statusText}`);
+            }
+
+            const fileContent = await response.buffer();
+            const dirPath = path.dirname(filePath);
+            
+            await fs.mkdir(dirPath, { recursive: true });
+            await fs.writeFile(filePath, fileContent);
+            console.log(`File downloaded successfully to ${filePath}`);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                throw new Error(`Error downloading file: ${error.message}`);
+            } else {
+                throw new Error('An unknown error occurred during download.');
             }
         }
     }
