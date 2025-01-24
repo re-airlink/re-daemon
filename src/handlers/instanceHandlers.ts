@@ -123,7 +123,7 @@ export const startContainer = async (
             Image: image,
             Env: Object.entries(env).map(([key, value]) => `${key}=${value}`),
             HostConfig: {
-                Binds: [`${volumePath}:/data`],
+                Binds: [`${volumePath}:/app/data`],
                 PortBindings: portBindings,
                 Memory: Memory * 1024 * 1024,
                 CpuCount: Cpu,

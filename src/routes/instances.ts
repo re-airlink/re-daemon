@@ -13,17 +13,33 @@ const router = Router();
 
 
 router.post('/container/start', async (req: Request, res: Response) => {
-    const { id, image, ports, env, Memory, Cpu } = req.body;
-
-    console.log(env);
+    const { id, image, ports, env, Memory, Cpu, StartCommand } = req.body;
 
     if (!id || !image) {
         res.status(400).json({ error: 'Container ID and Image are required.' });
         return;
     }
 
+    let environmentVariables: Record<string, string> =
+        typeof env === 'object' && env !== null ? { ...env } : {};
+
+        const regex = /\$ALVKT\((\w+)\)/g;
+        let updatedStartCommand = StartCommand;
+        updatedStartCommand = updatedStartCommand.replace(regex, (_: string, variableName: string) => {
+            if (environmentVariables[variableName]) {
+                return environmentVariables[variableName];
+            } else {
+                console.warn(`Variable "${variableName}" not found in environmentVariables.`);
+                return '';
+            }
+        });
+        
+    if (updatedStartCommand) {
+        environmentVariables['START'] = updatedStartCommand;
+    }
+
     try {
-        await startContainer(id, image, env, ports, Memory, Cpu);
+        await startContainer(id, image, environmentVariables, ports, Memory, Cpu);
         res.status(200).json({ message: `Container ${id} started successfully.` });
     } catch (error) {
         console.error(`Error starting container: ${error}`);
