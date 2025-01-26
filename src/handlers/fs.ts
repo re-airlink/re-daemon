@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import fetch from 'node-fetch'; // Ensure this is installed via npm
+import axios from 'axios';
 import fileSpecifier from './util/fileSpecifier';
 
 const sanitizePath = (base: string, relativePath: string): string => {
@@ -203,19 +203,26 @@ const afs = {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const filePath = sanitizePath(baseDirectory, relativePath);
 
-            const response = await fetch(url);
-            if (!response.ok) {
+            const response = await axios({
+                method: 'GET',
+                url: url,
+                responseType: 'arraybuffer'
+            });
+
+            if (response.status !== 200) {
                 throw new Error(`Failed to download file from ${url}: ${response.statusText}`);
             }
 
-            const fileContent = await response.buffer();
+            const fileContent = response.data;
             const dirPath = path.dirname(filePath);
             
             await fs.mkdir(dirPath, { recursive: true });
             await fs.writeFile(filePath, fileContent);
             console.log(`File downloaded successfully to ${filePath}`);
         } catch (error: unknown) {
-            if (error instanceof Error) {
+            if (axios.isAxiosError(error)) {
+                throw new Error(`Error downloading file: ${error.message}`);
+            } else if (error instanceof Error) {
                 throw new Error(`Error downloading file: ${error.message}`);
             } else {
                 throw new Error('An unknown error occurred during download.');
