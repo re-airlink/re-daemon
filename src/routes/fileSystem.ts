@@ -130,6 +130,38 @@ router.post('/fs/file/content', async (req: Request, res: Response) => {
     }
 });
 
+router.get('/fs/download', async (req: Request, res: Response) => {
+    const id = typeof req.query.id === 'string' ? req.query.id : undefined;
+    const relativePath = typeof req.query.path === 'string' ? req.query.path : '/';
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required and must be a string.' });
+        return;
+    }
+
+    try {
+        const filePath = await afs.getFilePath(id, relativePath);
+
+        if (!filePath) {
+            res.status(404).json({ error: 'File not found.' });
+            return;
+        }
+
+        res.download(filePath, (err) => {
+            if (err) {
+                res.status(500).json({ error: 'Error downloading file.' });
+            }
+        });
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'An unknown error occurred.' });
+        }
+    }
+});
+
+
 router.delete('/fs/rm', async (req: Request, res: Response) => {
     const id = typeof req.body.id === 'string' ? req.body.id : undefined;
     const relativePath = typeof req.body.path === 'string' ? req.body.path : '/';

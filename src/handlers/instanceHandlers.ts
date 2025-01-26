@@ -3,12 +3,30 @@ import WebSocket, { Server } from 'ws';
 import fs from 'fs';
 import path from 'path';
 import { IncomingMessage } from 'http';
-import Dockerode from 'dockerode';
-
 const docker = new Docker({ socketPath: process.platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock" });
 
 const checkDirectoryExistence = (dir: string): boolean => {
     return fs.existsSync(dir);
+};
+
+const parseJavaCommand = (env: Record<string, string>): string => {
+    const startCommand = env['START'] || '';
+    if (process.platform === 'darwin') {
+        // Add UseSVE=0 for macOS/Darwin
+        return startCommand.replace(
+            /^(java\s+)/,
+            '$1-XX:UseSVE=0 '
+        );
+    }
+    return startCommand;
+};
+
+const parseEnvironmentVariables = (env: Record<string, string>): Record<string, string> => {
+    const newEnv = { ...env };
+    if (process.platform === 'darwin' && newEnv['START']) {
+        newEnv['START'] = parseJavaCommand(env);
+    }
+    return newEnv;
 };
 
 export const initContainer = (id: string): string => {
@@ -116,12 +134,13 @@ export const startContainer = async (
 
         const volumePath = initContainer(id);
         const portBindings = parsePortBindings(ports);
+        const modifiedEnv = parseEnvironmentVariables(env);
 
         console.log(`Creating and starting container ${id}...`);
         await docker.createContainer({
             name: id,
             Image: image,
-            Env: Object.entries(env).map(([key, value]) => `${key}=${value}`),
+            Env: Object.entries(modifiedEnv).map(([key, value]) => `${key}=${value}`),
             HostConfig: {
                 Binds: [`${volumePath}:/app/data`],
                 PortBindings: portBindings,
@@ -135,6 +154,7 @@ export const startContainer = async (
             OpenStdin: true,
             Tty: true,
         }).then((container) => container.start());
+        
         console.log(`Container ${id} successfully started.`);
     } catch (error) {
         console.error(`Failed to start container ${id}: ${error}`);

@@ -119,6 +119,11 @@ const afs = {
         }
     },
 
+    async getFilePath(id: string, relativePath: string = '/') {
+        const baseDirectory = path.resolve(`volumes/${id}`);
+        return sanitizePath(baseDirectory, relativePath);
+    },
+
     async getFileSizeHandler(id: string, relativePath: string = '/'): Promise<number> {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
