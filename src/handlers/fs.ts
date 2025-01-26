@@ -239,15 +239,8 @@ const afs = {
 
     async zip(id: string, filePaths: string[] | string, zipname: string): Promise<string> {
         try {
-            // todo : make the .zip is output in the directory where we zip the files
             const baseDirectory = path.resolve(`volumes/${id}`);
-            const outputDir = path.join(baseDirectory);
-            await fs.mkdir(outputDir, { recursive: true });
-    
-            const zipPath = path.join(outputDir, `${zipname}.zip`);
-            const zipStream = fsN.createWriteStream(zipPath);
-            const archive = archiver('zip', { zlib: { level: 9 } });
-    
+            
             const files = (Array.isArray(filePaths) ? filePaths : [filePaths])
                 .flatMap(file => 
                     typeof file === 'string' 
@@ -259,6 +252,13 @@ const afs = {
                     fullPath: path.join(baseDirectory, file.replace(/[\[\]"']/g, '').trim())
                 }));
     
+            const firstFileDir = path.dirname(files[0].fullPath);
+            const zipPath = path.join(firstFileDir, `${zipname}.zip`);
+            
+            await fs.mkdir(path.dirname(zipPath), { recursive: true });
+    
+            const zipStream = fsN.createWriteStream(zipPath);
+            const archive = archiver('zip', { zlib: { level: 9 } });
     
             return new Promise((resolve, reject) => {
                 archive.pipe(zipStream);
@@ -274,7 +274,6 @@ const afs = {
                 (async () => {
                     for (const { cleanPath, fullPath } of files) {
                         try {
-    
                             const exists = await fs.access(fullPath).then(() => true).catch(() => false);
     
                             if (!exists) {
