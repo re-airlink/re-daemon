@@ -1,7 +1,9 @@
 import path from 'path';
 import fs from 'fs/promises';
+import fsN from 'fs';
 import axios from 'axios';
 import fileSpecifier from './util/fileSpecifier';
+import archiver from 'archiver';
 
 const sanitizePath = (base: string, relativePath: string): string => {
     const fullPath = path.join(base, relativePath);
@@ -233,7 +235,78 @@ const afs = {
                 throw new Error('An unknown error occurred during download.');
             }
         }
+    },
+
+    async zip(id: string, filePaths: string[] | string, zipname: string): Promise<string> {
+        try {
+            // todo : make the .zip is output in the directory where we zip the files
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const outputDir = path.join(baseDirectory);
+            await fs.mkdir(outputDir, { recursive: true });
+    
+            const zipPath = path.join(outputDir, `${zipname}.zip`);
+            const zipStream = fsN.createWriteStream(zipPath);
+            const archive = archiver('zip', { zlib: { level: 9 } });
+    
+            const files = (Array.isArray(filePaths) ? filePaths : [filePaths])
+                .flatMap(file => 
+                    typeof file === 'string' 
+                        ? file.split(',').map(f => f.trim()) 
+                        : file
+                )
+                .map(file => ({
+                    cleanPath: file.replace(/[\[\]"']/g, '').trim(),
+                    fullPath: path.join(baseDirectory, file.replace(/[\[\]"']/g, '').trim())
+                }));
+    
+    
+            return new Promise((resolve, reject) => {
+                archive.pipe(zipStream);
+    
+                archive.on('error', (err) => {
+                    reject(new Error(`Archive error: ${err.message}`));
+                });
+    
+                zipStream.on('close', () => {
+                    resolve(zipPath);
+                });
+    
+                (async () => {
+                    for (const { cleanPath, fullPath } of files) {
+                        try {
+    
+                            const exists = await fs.access(fullPath).then(() => true).catch(() => false);
+    
+                            if (!exists) {
+                                console.warn(`File not found: ${cleanPath}`);
+                                continue;
+                            }
+    
+                            const stats = await fs.stat(fullPath);
+                            if (stats.isDirectory()) {
+                                archive.directory(fullPath, cleanPath);
+                            } else {
+                                archive.file(fullPath, { name: cleanPath });
+                            }
+                        } catch (err) {
+                            console.warn(`Error processing ${cleanPath}:`, err);
+                        }
+                    }
+    
+                    await archive.finalize();
+                })().catch((err) => {
+                    reject(new Error(`Error during zipping process: ${err.message}`));
+                });
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Error creating zip: ${error.message}`);
+            } else {
+                throw new Error('An unknown error occurred during zip process');
+            }
+        }
     }
+    
 };
 
 export default afs;

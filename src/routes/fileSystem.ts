@@ -182,4 +182,27 @@ router.delete('/fs/rm', async (req: Request, res: Response) => {
     } 
 });
 
+router.post('/fs/zip', async (req: Request, res: Response) => {
+    const id = typeof req.body.id === 'string' ? req.body.id : undefined;
+    const relativePath = Array.isArray(req.body.path) ? req.body.path : [req.body.path || '/'];
+    const zipname = typeof req.body.zipname === 'string' ? req.body.zipname : '';
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required and must be a string.' });
+        return;
+    }
+
+    try {
+        const zipPath = await afs.zip(id, relativePath, zipname);
+        res.status(200).json({ zipPath });
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'An unknown error occurred.' });
+        }
+    }
+});
+
+
 export default router;
