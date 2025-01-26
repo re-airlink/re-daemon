@@ -323,6 +323,11 @@ export const initializeWebSocketServer = (server: any) => {
                     if (route === 'container') {
                         await attachToContainerWithWS(containerId, ws);
                     } else if (route === 'containerstatus') {
+                        const stats2 = await getContainerStats(containerId);
+                        if (stats2 && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ event: 'status', data: stats2 }));
+                        }
+
                         intervalHandler = setInterval(async () => {
                             const stats = await getContainerStats(containerId);
                             if (stats && ws.readyState === WebSocket.OPEN) {
