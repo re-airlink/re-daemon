@@ -30,13 +30,13 @@ export async function init() {
     };
 
     const isDockerRunning = async () => {
-        const command = 'docker ps';
+        const command = process.platform === 'win32' ? 'docker ps' : 'docker ps -q';
 
         try {
             await execAsync(command);
         } catch (error) {
             console.error("Docker is not running. Please start Docker and try again.");
-            throw error;
+            process.exit(1);
         }
     };
 
