@@ -1,12 +1,15 @@
+import http from "http";
 import express, { Application } from "express";
-import compression from 'compression';
+import compression from "compression";
 import config from "../utils/config";
 import { registerRoutes } from "./routes";
 import { basicAuthMiddleware, logLoginAttempts } from "./middleware";
 import { errorHandler } from "../utils/errorHandler";
-import { init } from "./init";  
+import { initializeWebSocketServer } from "../handlers/instances/initializeWebSocket";
+import { init } from "./init";
 
 const app: Application = express();
+const server = http.createServer(app);
 
 (async () => {
   try {
@@ -14,22 +17,18 @@ const app: Application = express();
 
     app.use(express.json());
     app.use(compression());
-    app.use(basicAuthMiddleware)
-    app.use(logLoginAttempts)
+    app.use(basicAuthMiddleware);
+    app.use(logLoginAttempts);
 
     registerRoutes(app);
 
-    //try {
-    //  initializeWebSocketServer(app);
-    //} catch (error) {
-    //  console.error('Failed to initialize WebSocket server:', error);
-    //}
-
     app.use(errorHandler);
+
+    initializeWebSocketServer(server);
 
     const { port } = config;
     setTimeout(() => {
-      app.listen(port, () => {
+      server.listen(port, () => {
         console.info(`Daemon is running on port ${port}`);
       });
     }, 1000);
@@ -38,9 +37,3 @@ const app: Application = express();
     process.exit(1);
   }
 })();
-
-
-
-
-
-

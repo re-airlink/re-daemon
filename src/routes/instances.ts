@@ -1,14 +1,13 @@
 import { Router, Request, Response } from 'express';
-import {
-    attachToContainer,
-    killContainer,
-    sendCommandToContainer,
-    startContainer,
-    stopContainer,
-    deleteContainerAndVolume,
-    initContainer
-} from '../handlers/instances/instanceHandlers';
 import afs from '../handlers/filesystem/fs';
+
+import { initContainer } from '../handlers/instances/utils';
+import { attachToContainer } from '../handlers/instances/attach';
+import { startContainer } from '../handlers/instances/create';
+import { stopContainer } from '../handlers/instances/stop';
+import { killContainer } from '../handlers/instances/kill';
+import { deleteContainerAndVolume } from '../handlers/instances/delete';
+import { sendCommandToContainer } from '../handlers/instances/command';
 
 const router = Router();
 
