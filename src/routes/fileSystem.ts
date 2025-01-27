@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import afs from '../handlers/fs';
+import afs from '../handlers/filesystem/fs';
 
 const router = Router();
 

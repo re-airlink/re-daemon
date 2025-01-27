@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import fsN from 'fs';
 import axios from 'axios';
-import fileSpecifier from './util/fileSpecifier';
+import fileSpecifier from '../../utils/fileSpecifier';
 import archiver from 'archiver';
 
 const sanitizePath = (base: string, relativePath: string): string => {

@@ -7,8 +7,8 @@ import {
     stopContainer,
     deleteContainerAndVolume,
     initContainer
-} from '../handlers/instanceHandlers';
-import afs from '../handlers/fs';
+} from '../handlers/instances/instanceHandlers';
+import afs from '../handlers/filesystem/fs';
 
 const router = Router();
 
