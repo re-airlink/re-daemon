@@ -2,6 +2,8 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 
+
+
 export function registerRoutes(app: express.Application): void {
     const routesDir = path.resolve(__dirname, "../routes");
     try {

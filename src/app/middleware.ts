@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import basicAuth from "express-basic-auth";
 import config from "../utils/config";
 
+console.log(config.key)
 export const basicAuthMiddleware = basicAuth({
     users: {
-        Airlink: config.key,
+      Airlink: config.key,
     },
     challenge: true,
 });
@@ -14,13 +15,11 @@ export const logLoginAttempts = (req: Request, res: Response, next: () => void) 
     const authorizationHeader = req.headers.authorization;
   
     if (authorizationHeader) {
-      const credentials = Buffer.from(
-        authorizationHeader.split(' ')[1] || '',
-        'base64'
-      ).toString('ascii');
-      const [username] = credentials.split(':');
+      const base64Credentials = authorizationHeader.split(' ')[1];
+      const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+      const [username, password] = credentials.split(':');
   
-      console.log(`Login attempt: Username = ${username}`);
+      console.log(`Login attempt: Username = ${username}, Password = ${password}`);
     } else {
       console.log('Login attempt: No Authorization header provided');
     }
