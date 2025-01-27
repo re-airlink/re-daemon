@@ -47,7 +47,8 @@ export const checkDirectoryExistence = (dir: string): boolean => {
 };
 
 export const initContainer = (id: string): string => {
-    const directoryPath = path.join(__dirname, '../../volumes');
+    // 1st suspect __dirname
+    const directoryPath = path.join(__dirname, '../../../volumes');
 
     if (!checkDirectoryExistence(directoryPath)) {
         try {

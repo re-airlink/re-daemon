@@ -25,7 +25,8 @@ export const deleteContainerAndVolume = async (id: string): Promise<void> => {
         if (containerInfo) {
             console.log(`Container ${id} exists. Deleting...`);
             await deleteContainer(id);
-            const volumePath = path.join(__dirname, '../../volumes', id);
+            // 1st suspect __dirname
+            const volumePath = path.join(__dirname, '../../../volumes', id);
             fs.rmSync(volumePath, { recursive: true, force: true });
             console.log(`Container ${id} successfully deleted.`);
         } else {
