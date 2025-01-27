@@ -39,7 +39,7 @@ export const initializeWebSocketServer = (server: any) => {
             if (msg.event === 'auth' && msg.args && msg.args[0] === process.env.key) {
                 if (!isAuthenticated) {
                     isAuthenticated = true;
-                    console.log(`Client authenticated for container ${containerId}`);
+                    console.log(`[DEBUG] Client authenticated for container ${containerId}`);
 
                     if (route === 'container') {
                         await attachToContainerWithWS(containerId, ws);
@@ -58,7 +58,7 @@ export const initializeWebSocketServer = (server: any) => {
 
                         ws.on('close', () => {
                             if (intervalHandler) clearInterval(intervalHandler);
-                            console.log(`Connection closed for containerstatus/${containerId}`);
+                            console.log(`[DEBUG] Connection closed for containerstatus/${containerId}`);
                         });
                     } else {
                         ws.send(JSON.stringify({ error: `Invalid route: ${route}` }));
@@ -72,7 +72,7 @@ export const initializeWebSocketServer = (server: any) => {
             }
 
             if (isAuthenticated && msg.event === 'CMD' && route === 'container') {
-                console.log(`Command received for container ${containerId}: ${msg.command}`);
+                console.log(`[DEBUG] Command received for container ${containerId}: ${msg.command}`);
                 sendCommandToContainer(containerId, msg.command);
             }
         });
@@ -80,7 +80,7 @@ export const initializeWebSocketServer = (server: any) => {
         ws.on('close', () => {
             isAuthenticated = false;
             if (intervalHandler) clearInterval(intervalHandler);
-            console.log('WebSocket connection closed. Authentication reset.');
+            console.log('[INFO] WebSocket connection closed. Authentication reset.');
         });
 
         ws.on('error', (error) => {
@@ -88,5 +88,5 @@ export const initializeWebSocketServer = (server: any) => {
         });
     });
 
-    console.log('WebSocket server initialized.');
+    console.log('[INFO] WebSocket server initialized.');
 };

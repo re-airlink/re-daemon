@@ -27,8 +27,4 @@ const config: Config = {
   version: getEnvVar("VERSION", "1.0.0"),
 };
 
-if (!fs.existsSync('.env')) {
-  throw new Error(".env file not found");
-}
-
 export default config;

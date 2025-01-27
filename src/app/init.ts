@@ -13,7 +13,7 @@ export async function init() {
         try {
             await execAsync(command);
         } catch (error) {
-            console.error("Docker is not installed. Please install Docker and try again.");
+            console.error("[ERROR] Docker is not installed. Please install Docker and try again.");
             throw error;
         }
     };
@@ -24,7 +24,7 @@ export async function init() {
         try {
             await execAsync(command);
         } catch (error) {
-            console.error("Docker is not running. Please start Docker and try again.");
+            console.error("[ERROR] Docker is not running. Please start Docker and try again.");
             process.exit(1);
         }
     };
@@ -34,23 +34,32 @@ export async function init() {
         if (process.platform === 'win32') {
             const lockFilePath = path.join(__dirname, "..", '..', 'node_modules', 'docker-modem', 'lib', 'docker_modem_fix.lock');
             const modemPath = path.join(__dirname, "..", '..', 'node_modules', 'docker-modem', 'lib', 'modem.js');
-            const modemUrl = 'https://raw.githubusercontent.com/achul123/docker-modem/refs/heads/master/lib/modem.js';
-        
+
             if (!fs.existsSync(lockFilePath)) {
-                console.log('Fixing docker-modem for windows...');
+                console.log('[INFO] Fixing docker-modem for windows...');
                 // download the file and save in /node_modules/docker-modem/lib/modem.js
-                const response = await axios.get(modemUrl);
-                const data = response.data;
-                await fs.promises.writeFile(modemPath, data, { encoding: 'utf8' });
+                const response = await axios.get('https://raw.githubusercontent.com/achul123/docker-modem/refs/heads/master/lib/modem.js', { responseType: 'stream' });
+                await new Promise((resolve, reject) => {
+                    response.data.pipe(fs.createWriteStream(modemPath))
+                        .on('finish', resolve)
+                        .on('error', reject);
+                });
             
                 // Create the lock file to prevent future executions
                 await fs.promises.writeFile(lockFilePath, 'Docker-modem fix applied', { encoding: 'utf8' });
-                console.log('Docker-modem fix applied');
+                console.log('[INFO] Docker-modem fix applied');
             }
         }
     }
 
+    const envExists = () => fs.promises.access(path.resolve(process.cwd(), '.env'), fs.constants.F_OK)
+        .catch(() => {
+            console.error("[WARN] .env file not found. Please rename example.env to .env file and try again.");
+            process.exit(1);
+        });
+
     try {
+        envExists();
         await isDockerInstalled();
         await isDockerRunning();
         await isDockerModemFix();
