@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
@@ -25,5 +26,9 @@ const config: Config = {
   environment: getEnvVar("ENVIRONMENT", "development"),
   version: getEnvVar("VERSION", "1.0.0"),
 };
+
+if (!fs.existsSync('.env')) {
+  throw new Error(".env file not found");
+}
 
 export default config;
