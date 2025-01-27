@@ -1,12 +1,12 @@
 
-import { IncomingMessage } from 'http';
+import { IncomingMessage, Server as HttpServer } from 'http';
 import WebSocket, { Server } from 'ws';
 import { attachToContainerWithWS } from './attach';
 import { getContainerStats } from './utils';
 import { sendCommandToContainer } from './command';
 
 
-export const initializeWebSocketServer = (server: any) => {
+export const initializeWebSocketServer = (server: HttpServer): void => {
     const wss = new Server({ server });
 
     wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
@@ -14,8 +14,8 @@ export const initializeWebSocketServer = (server: any) => {
         let intervalHandler: NodeJS.Timeout | null = null;
 
         ws.on('message', async (message: WebSocket.RawData) => {
-            let msg;
-            let messageString = message.toString();
+            let msg: { event: string; args?: string[]; command?: string } | null = null;
+            const messageString = message.toString();
 
             try {
                 msg = JSON.parse(messageString);
@@ -33,6 +33,12 @@ export const initializeWebSocketServer = (server: any) => {
             if (!containerId) {
                 ws.send(JSON.stringify({ error: 'Container ID is required in the URL' }));
                 ws.close(1008, 'Container ID required');
+                return;
+            }
+
+            if (!msg || !msg.event) {
+                ws.send(JSON.stringify({ error: 'Invalid message format' }));
+                ws.close(1008, 'Invalid message format');
                 return;
             }
 
@@ -73,7 +79,9 @@ export const initializeWebSocketServer = (server: any) => {
 
             if (isAuthenticated && msg.event === 'CMD' && route === 'container') {
                 console.log(`[DEBUG] Command received for container ${containerId}: ${msg.command}`);
-                sendCommandToContainer(containerId, msg.command);
+                if (msg.command) {
+                    sendCommandToContainer(containerId, msg.command);
+                }
             }
         });
 
@@ -83,7 +91,7 @@ export const initializeWebSocketServer = (server: any) => {
             console.log('[INFO] WebSocket connection closed. Authentication reset.');
         });
 
-        ws.on('error', (error) => {
+        ws.on('error', (error: Error) => {
             console.error('WebSocket error:', error);
         });
     });
