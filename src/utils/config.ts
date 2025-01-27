@@ -20,11 +20,11 @@ function getEnvVar(key: string, defaultValue?: string): string {
 }
 
 const config: Config = {
-  remote: getEnvVar("REMOTE", "localhost"),
-  key: getEnvVar("KEY", "00000000000000000000000000000000"),
-  port: parseInt(getEnvVar("PORT", "3002"), 10),
-  environment: getEnvVar("ENVIRONMENT", "development"),
-  version: getEnvVar("VERSION", "1.0.0"),
+  remote: getEnvVar("remote", "localhost"),
+  key: getEnvVar("key", "00000000000000000000000000000000"),
+  port: parseInt(getEnvVar("port", "3002"), 10),
+  environment: getEnvVar("environment", "development"),
+  version: getEnvVar("version", "1.0.0"),
 };
 
 export default config;

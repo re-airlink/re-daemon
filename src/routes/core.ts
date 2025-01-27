@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { meta } from '../../storage/config.json'
+import config from '../utils/config';
 
 const router = Router();
-let config = process.env
 
 router.get('/', async (req: Request, res: Response) => {
     try {

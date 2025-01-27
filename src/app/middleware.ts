@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import basicAuth from "express-basic-auth";
 import config from "../utils/config";
 
-console.log(config.key)
 export const basicAuthMiddleware = basicAuth({
     users: {
       Airlink: config.key,
