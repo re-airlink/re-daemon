@@ -4,7 +4,7 @@
   "main": "app.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/app.js",
+    "start": "node dist/app/app.js",
     "clean": "node -e \"const { existsSync, mkdirSync, readdirSync, rmSync } = require('fs'); if (!existsSync('dist')) mkdirSync('dist'); readdirSync('dist').forEach(dir => { if (dir !== 'storage') rmSync(`dist/${dir}`, { recursive: true, force: true }); });\"",
     "start:dev": "npm run build & npm run start",
     "configure": "tsx src/handlers/configure.ts"
