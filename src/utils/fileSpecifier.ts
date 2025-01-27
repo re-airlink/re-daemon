@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const fileSpecifierPath = path.resolve(__dirname, '../../../storage/fileSpecifier.json');
+const fileSpecifierPath = path.resolve(__dirname, '../../storage/fileSpecifier.json');
 
 const fileSpecifier = {
     async getCategory(extension: string): Promise<string | null> {
