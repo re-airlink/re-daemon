@@ -61,6 +61,7 @@ const afs = {
         const rateData = requestCache.get(id);
     
         if (rateData.cache && currentTime - rateData.lastRequest < 1000 && rateData.path === relativePath) {
+            console.log('Cache hit', relativePath);
             return rateData.cache;
         }
     
@@ -75,6 +76,7 @@ const afs = {
     
         if (rateData.count > 5) {
             rateData.cache = { error: 'Too many requests, please wait 3 seconds.' };
+            console.log('Too many requests, please wait 3 seconds.');
             setTimeout(() => requestCache.delete(id), 3000);
             return rateData.cache;
         }
@@ -189,6 +191,10 @@ const afs = {
             const targetPath = sanitizePath(baseDirectory, relativePath);
 
             const stat = await fs.lstat(targetPath);
+
+            if (relativePath === '/') {
+                throw new Error('Root directory cannot be deleted.');
+            }
 
             if (stat.isDirectory()) {
                 await fs.rm(targetPath, { recursive: true, force: true });
