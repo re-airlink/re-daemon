@@ -53,31 +53,32 @@ const getFileContent = async (filePath: string): Promise<string | null> => {
 const afs = {
     async list(id: string, relativePath: string = '/', filter?: string) {
         const currentTime = Date.now();
-
+    
         if (!requestCache.has(id)) {
-            requestCache.set(id, { lastRequest: currentTime, count: 0, cache: null });
+            requestCache.set(id, { lastRequest: currentTime, count: 0, cache: null, path: relativePath });
         }
-
+    
         const rateData = requestCache.get(id);
-
-        if (rateData.cache && currentTime - rateData.lastRequest < 1000) {
+    
+        if (rateData.cache && currentTime - rateData.lastRequest < 1000 && rateData.path === relativePath) {
             return rateData.cache;
         }
-
+    
         if (currentTime - rateData.lastRequest < 1000) {
             rateData.count += 1;
         } else {
             rateData.count = 1;
         }
-
+    
         rateData.lastRequest = currentTime;
-
+        rateData.path = relativePath;
+    
         if (rateData.count > 5) {
             rateData.cache = { error: 'Too many requests, please wait 3 seconds.' };
             setTimeout(() => requestCache.delete(id), 3000);
             return rateData.cache;
         }
-
+    
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const targetDirectory = sanitizePath(baseDirectory, relativePath);
@@ -86,7 +87,7 @@ const afs = {
                 const ext = path.extname(dirent.name).substring(1);
                 const category = await fileSpecifier.getCategory(ext);
                 let size = null;
-
+    
                 if (dirent.isDirectory()) {
                     const dirPath = path.join(targetDirectory, dirent.name);
                     size = await getDirectorySize(dirPath);
@@ -94,7 +95,7 @@ const afs = {
                     const filePath = path.join(targetDirectory, dirent.name);
                     size = await getFileSize(filePath);
                 }
-
+    
                 return {
                     name: dirent.name,
                     type: dirent.isDirectory() ? 'directory' : 'file',
@@ -103,13 +104,13 @@ const afs = {
                     size: size
                 };
             }));
-
+    
             const limitedResults = results.slice(0, 256);
-
+    
             if (filter) {
                 return limitedResults.filter(item => item.name.includes(filter));
             }
-
+    
             rateData.cache = limitedResults;
             return limitedResults;
         } catch (error: unknown) {
