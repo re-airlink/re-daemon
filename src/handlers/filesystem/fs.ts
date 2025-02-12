@@ -212,24 +212,35 @@ const afs = {
         }
     },
 
-    async download(id: string, url: string, relativePath: string): Promise<void> {
+    async download(id: string, url: string, relativePath: string, environmentVariables?: Record<string, string>): Promise<void> {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const filePath = sanitizePath(baseDirectory, relativePath);
-
+    
             const response = await axios({
                 method: 'GET',
                 url: url,
                 responseType: 'arraybuffer'
             });
-
+    
             if (response.status !== 200) {
                 throw new Error(`Failed to download file from ${url}: ${response.statusText}`);
             }
-
-            const fileContent = response.data;
+    
+            let fileContent = response.data.toString();
+    
+            if (environmentVariables) {
+                const regex = /\$ALVKT\((\w+)\)/g;
+                fileContent = fileContent.replace(regex, (_: string, variableName: string) => {
+                    if (environmentVariables[variableName]) {
+                        return environmentVariables[variableName];
+                    } else {
+                        console.warn(`Variable "${variableName}" not found in environment variables.`);
+                        return '';
+                    }
+                });
+            }
             const dirPath = path.dirname(filePath);
-            
             await fs.mkdir(dirPath, { recursive: true });
             await fs.writeFile(filePath, fileContent);
             console.log(`File downloaded successfully to ${filePath}`);

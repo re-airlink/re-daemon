@@ -52,7 +52,11 @@ router.post('/container/install', async (req: Request, res: Response) => {
 
                 // Download the file using afs
                 try {
-                    await afs.download(id, resolvedUrl, fileName);
+                    if (script.ALVKT  === true) {
+                        await afs.download(id, resolvedUrl, fileName, environmentVariables);
+                    } else {
+                        await afs.download(id, resolvedUrl, fileName);
+                        }
                     console.log(`Downloaded ${fileName} from ${resolvedUrl} for container ${id}.`);
                 } catch (error) {
                     console.error(`Error downloading file "${fileName}": ${error}`);
