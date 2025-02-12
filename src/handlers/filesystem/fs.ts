@@ -227,18 +227,21 @@ const afs = {
                 throw new Error(`Failed to download file from ${url}: ${response.statusText}`);
             }
     
-            let fileContent = response.data.toString();
+            let fileContent = response.data;
     
             if (environmentVariables) {
                 const regex = /\$ALVKT\((\w+)\)/g;
-                fileContent = fileContent.replace(regex, (_: string, variableName: string) => {
+                fileContent = fileContent.toString().replace(regex, (_: string, variableName: string) => {
                     if (environmentVariables[variableName]) {
+                        console.log(environmentVariables[variableName])
                         return environmentVariables[variableName];
                     } else {
                         console.warn(`Variable "${variableName}" not found in environment variables.`);
                         return '';
                     }
                 });
+
+                console.log(fileContent)
             }
             const dirPath = path.dirname(filePath);
             await fs.mkdir(dirPath, { recursive: true });
