@@ -134,3 +134,6 @@ dist
 
 # package-lock.json
 package-lock.json
+
+# ds_store
+.DS_Store
