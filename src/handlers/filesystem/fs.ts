@@ -58,8 +58,14 @@ const afs = {
 
         // if file rename file else if folder rename folder 
         if (fsN.lstatSync(oldFilePath).isFile()) {
+            if (fsN.existsSync(newFilePath)) {
+                throw new Error('File already exists');
+            }
             await fs.rename(oldFilePath, newFilePath);
         } else {
+            if (fsN.existsSync(newFilePath)) {
+                throw new Error('Folder already exists');
+            }
             await fs.rename(oldFilePath, newFilePath);
         }
     },
