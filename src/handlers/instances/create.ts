@@ -18,6 +18,22 @@ export const startContainer = async (
         const modifiedEnv = parseEnvironmentVariables(env);
 
         console.log(`Creating and starting container ${id}...`);
+        try {
+            const stream = await docker.pull(image);
+            await new Promise((resolve, reject) => {
+                docker.modem.followProgress(stream, (err, result) => {
+                    if (err) {
+                        return reject(new Error(`Failed to pull image: ${err.message}`));
+                    }
+                    console.log(`Image ${image} pulled successfully.`);
+                    resolve(result);
+                });
+            });
+        } catch (err) {
+            console.error(`Error pulling image ${Image}:`, err);
+            return;
+        }
+
         await docker.createContainer({
             name: id,
             Image: image,

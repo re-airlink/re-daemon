@@ -103,7 +103,6 @@ export const getContainerStats = async (id: string) => {
             },
         };
     } catch (error) {
-        console.error(`Error fetching stats for container ${id}:`, error);
         return null;
     }
 };
