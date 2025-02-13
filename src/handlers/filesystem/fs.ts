@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import fsN from 'fs';
+import fsN, { rename } from 'fs';
 import axios from 'axios';
 import fileSpecifier from '../../utils/fileSpecifier';
 import archiver from 'archiver';
@@ -51,6 +51,19 @@ const getFileContent = async (filePath: string): Promise<string | null> => {
 };
 
 const afs = {
+    async rename(id: string, oldPath: string, newPath: string) {
+        const baseDirectory = path.resolve(`volumes/${id}`);
+        const oldFilePath = sanitizePath(baseDirectory, oldPath);
+        const newFilePath = sanitizePath(baseDirectory, newPath);
+
+        // if file rename file else if folder rename folder 
+        if (fsN.lstatSync(oldFilePath).isFile()) {
+            await fs.rename(oldFilePath, newFilePath);
+        } else {
+            await fs.rename(oldFilePath, newFilePath);
+        }
+    },
+
     async list(id: string, relativePath: string = '/', filter?: string) {
         const currentTime = Date.now();
     

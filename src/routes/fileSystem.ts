@@ -204,5 +204,27 @@ router.post('/fs/zip', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/fs/rename', async (req: Request, res: Response) => {
+    const id = typeof req.body.id === 'string' ? req.body.id : undefined;
+    const relativePath = typeof req.body.path === 'string' ? req.body.path : '/';
+    const newName = typeof req.body.newName === 'string' ? req.body.newName : '';
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required and must be a string.' });
+        return;
+    }
+
+    try {
+        await afs.rename(id, relativePath, newName);
+        res.json({ message: 'File successfully renamed.' });
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'An unknown error occurred.' });
+        }
+    }
+});
+
 
 export default router;
