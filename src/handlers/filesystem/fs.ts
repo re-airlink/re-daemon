@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import fsN, { rename } from 'fs';
+import fsN from 'fs';
 import axios from 'axios';
 import fileSpecifier from '../../utils/fileSpecifier';
 import archiver from 'archiver';
