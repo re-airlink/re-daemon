@@ -4,6 +4,7 @@ import fsN from 'fs';
 import axios from 'axios';
 import fileSpecifier from '../../utils/fileSpecifier';
 import archiver from 'archiver';
+import { spawn } from 'child_process';
 
 const sanitizePath = (base: string, relativePath: string): string => {
     const fullPath = path.join(base, relativePath);
@@ -344,8 +345,146 @@ const afs = {
                 throw new Error('An unknown error occurred during zip process');
             }
         }
-    }
+    },
+
+    async unzip(id: string, relativePath: string, zipname: string): Promise<void> {
+        try {
+            const baseDirectory = path.resolve(`volumes/${id}`);
+            const archivePath = path.join(baseDirectory, relativePath, zipname);
+            const extractPath = path.dirname(archivePath);
+
+            console.log('Unzip paths:', {
+                baseDirectory,
+                archivePath,
+                extractPath
+            });
+
+            const exists = await fs.access(archivePath)
+                .then(() => true)
+                .catch(() => false);
+
+            if (!exists) {
+                throw new Error(`File not found: ${archivePath}`);
+            }
+
+            const archiveType = await detectArchiveType(archivePath);
+            if (!archiveType) {
+                throw new Error('Unsupported archive type');
+            }
+
+            await extractArchive(archivePath, extractPath, archiveType);
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new Error(`Error during unzip: ${error.message}`);
+            } else {
+                throw new Error('Error during unzip process');
+            }
+        }
+    },
     
 };
+
+async function detectArchiveType(filePath: string): Promise<string | null> {
+    const fileExt = path.extname(filePath).toLowerCase();
+    switch (fileExt) {
+        case '.zip':
+            return 'zip';
+        case '.tar':
+            return 'tar';
+        case '.gz':
+        case '.tgz':
+            return 'gzip';
+        case '.rar':
+            return 'rar';
+        case '.7z':
+            return '7z';
+        default:
+            return null;
+    }
+}
+
+async function extractArchive(archivePath: string, extractPath: string, type: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        let command: string;
+        let args: string[] = [];
+
+        if (process.platform === 'win32') {
+            // Windows 11
+            const explorerPath = 'C:\\Windows\\explorer.exe';
+            if (fsN.existsSync(explorerPath)) {
+                command = explorerPath;
+                args = ['/select,', archivePath];
+            } 
+            // WinRAR
+            else if (fsN.existsSync('C:\\Program Files\\WinRAR\\WinRAR.exe')) {
+                command = 'C:\\Program Files\\WinRAR\\WinRAR.exe';
+                args = ['x', '-y', archivePath, extractPath];
+            }
+            // 7-Zip
+            else if (fsN.existsSync('C:\\Program Files\\7-Zip\\7z.exe')) {
+                command = 'C:\\Program Files\\7-Zip\\7z.exe';
+                args = ['x', archivePath, `-o${extractPath}`, '-y'];
+            }
+            // 7-Zip (32-bit)
+            else if (fsN.existsSync('C:\\Program Files (x86)\\7-Zip\\7z.exe')) {
+                command = 'C:\\Program Files (x86)\\7-Zip\\7z.exe';
+                args = ['x', archivePath, `-o${extractPath}`, '-y'];
+            }
+            else {
+                reject(new Error('The archive type is not supported.'));
+                return;
+            }
+        } else {
+            switch (type) {
+                case 'zip':
+                    command = 'unzip';
+                    args = ['-o', archivePath, '-d', extractPath];
+                    break;
+                case 'tar':
+                    command = 'tar';
+                    args = ['-xf', archivePath, '-C', extractPath];
+                    break;
+                case 'gzip':
+                    command = 'tar';
+                    args = ['-xzf', archivePath, '-C', extractPath];
+                    break;
+                case 'rar':
+                    command = 'unrar';
+                    args = ['x', archivePath, extractPath];
+                    break;
+                case '7z':
+                    command = '7z';
+                    args = ['x', archivePath, `-o${extractPath}`];
+                    break;
+                default:
+                    reject(new Error('The archive type is not supported.'));
+                    return;
+            }
+        }
+
+        const childProcess = spawn(command, args);
+        let errorOutput = '';
+
+        childProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        childProcess.stdout.on('data', (data) => {
+            console.log(`Display: ${data}`);
+        });
+
+        childProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve();
+            } else {
+                reject(new Error(`Command exited with code ${code}: ${command} ${args.join(' ')}: ${errorOutput}`));
+            }
+        });
+
+        childProcess.on('error', (err) => {
+            reject(new Error(`Command error: ${err.message}`));
+        });
+    });
+}
 
 export default afs;

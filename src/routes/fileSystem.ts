@@ -204,6 +204,28 @@ router.post('/fs/zip', async (req: Request, res: Response) => {
     }
 });
 
+router.post('/fs/unzip', async (req: Request, res: Response) => {
+    const id = typeof req.body.id === 'string' ? req.body.id : undefined;
+    const relativePath = typeof req.body.path === 'string' ? req.body.path : '/';
+    const zipname = typeof req.body.zipname === 'string' ? req.body.zipname : '';
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required and must be a string.' });
+        return;
+    }
+
+    try {
+        await afs.unzip(id, relativePath, zipname);
+        res.json({ message: 'File successfully unzipped.' });
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'An unknown error occurred.' });
+        }
+    }
+});
+
 router.post('/fs/rename', async (req: Request, res: Response) => {
     const id = typeof req.body.id === 'string' ? req.body.id : undefined;
     const relativePath = typeof req.body.path === 'string' ? req.body.path : '/';
