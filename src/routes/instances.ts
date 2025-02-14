@@ -3,13 +3,41 @@ import afs from '../handlers/filesystem/fs';
 
 import { initContainer } from '../handlers/instances/utils';
 import { attachToContainer } from '../handlers/instances/attach';
-import { startContainer } from '../handlers/instances/create';
+import { startContainer, createInstaller } from '../handlers/instances/create';
 import { stopContainer } from '../handlers/instances/stop';
 import { killContainer } from '../handlers/instances/kill';
 import { deleteContainerAndVolume } from '../handlers/instances/delete';
 import { sendCommandToContainer } from '../handlers/instances/command';
 
 const router = Router();
+
+router.post('/container/installer', async (req: Request, res: Response) => {
+    const { id, script, container, env } = req.body;
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required.' });
+        return;
+    }
+
+    if (!script || !container) {
+        res.status(400).json({ error: 'Script and Container are required.' });
+        return;
+    }
+
+    let environmentVariables: Record<string, string> =
+        typeof env === 'object' && env !== null ? { ...env } : {};
+
+    try {
+        await initContainer(id);
+
+        await createInstaller(id, container, script, environmentVariables);
+
+        res.status(200).json({ message: `Container ${id} installed successfully.` });
+    } catch (error) {
+        console.error(`Error installing container: ${error}`);
+        res.status(500).json({ error: `Failed to install container ${id}.` });
+    }
+});
 
 router.post('/container/install', async (req: Request, res: Response) => {
     const { id, scripts, env } = req.body;

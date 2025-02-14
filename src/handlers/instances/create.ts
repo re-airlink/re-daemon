@@ -57,3 +57,52 @@ export const startContainer = async (
         console.error(`Failed to start container ${id}: ${error}`);
     }
 };
+
+export const createInstaller = async (
+    id: string,
+    image: string,
+    script: string,
+    env: Record<string, string> = {},
+): Promise<void> => {
+    try {
+        await deleteContainer('installer_' + id);
+
+        const volumePath = initContainer(id);
+        const modifiedEnv = parseEnvironmentVariables(env);
+
+        console.log(`Creating and starting installer container installer_${id}...`);
+        try {
+            const stream = await docker.pull(image);
+            await new Promise((resolve, reject) => {
+                docker.modem.followProgress(stream, (err, result) => {
+                    if (err) {
+                        return reject(new Error(`Failed to pull image: ${err.message}`));
+                    }
+                    console.log(`Image ${image} pulled successfully.`);
+                    resolve(result);
+                });
+            });
+        } catch (err) {
+            console.error(`Error pulling image ${image}:`, err);
+            return;
+        }
+
+        const container = await docker.createContainer({
+            name: 'installer_' + id,
+            Image: image,
+            Entrypoint: ['/bin/sh', '-c', script],
+            Env: Object.entries(modifiedEnv).map(([key, value]) => `${key}=${value}`),
+            HostConfig: {
+                Binds: [`${volumePath}:/app/data`],
+                AutoRemove: true,
+                NetworkMode: 'host'
+            }
+        });
+
+        await container.start();
+
+        console.log(`Container installer_${id} successfully started.`);
+    } catch (error) {
+        console.error(`Failed to start container installer_${id}: ${error}`);
+    }
+};
