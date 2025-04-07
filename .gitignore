@@ -135,5 +135,7 @@ dist
 # package-lock.json
 package-lock.json
 
+# bun
+bun.lockb
 # ds_store
 .DS_Store
