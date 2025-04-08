@@ -97,7 +97,8 @@ router.get('/fs/file/content', async (req: Request, res: Response) => {
         if (content === null) {
             res.status(404).json({ error: 'File content could not be read or is not a text file.' });
         } else {
-            res.json({ content });
+            res.type('text/plain');
+            res.send(content.toString());
         }
     } catch (error) {
         if (error instanceof Error) {
