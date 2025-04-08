@@ -200,12 +200,14 @@ const afs = {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const filePath = sanitizePath(baseDirectory, relativePath);
+            const dir = path.dirname(filePath);
+            await fs.mkdir(dir, { recursive: true });
             await fs.writeFile(filePath, content, 'utf-8');
         } catch (error: unknown) {
             if (error instanceof Error) {
-                throw new Error(`Error writing file content: ${error.message}`);
+                console.error(`Error writing file content: ${error.message}`);
             } else {
-                throw new Error('An unknown error occurred.');
+                console.error('An unknown error occurred during file writing.');
             }
         }
     },

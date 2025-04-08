@@ -8,6 +8,7 @@ import { stopContainer } from '../handlers/instances/stop';
 import { killContainer } from '../handlers/instances/kill';
 import { deleteContainerAndVolume } from '../handlers/instances/delete';
 import { sendCommandToContainer } from '../handlers/instances/command';
+import { relative } from 'path';
 
 const router = Router();
 
@@ -92,6 +93,10 @@ router.post('/container/install', async (req: Request, res: Response) => {
                 }
             }
         }
+        const relativePath = "/airlink/installed.txt";
+        console.log('test');
+
+        afs.writeFileContentHandler(id, relativePath, "Installed: true")
 
         res.status(200).json({ message: `Container ${id} installed successfully.` });
     } catch (error) {
