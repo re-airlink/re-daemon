@@ -34,19 +34,24 @@ const getDirectorySize = async (directory: string): Promise<number> => {
 };
 
 const getFileSize = async (filePath: string): Promise<number> => {
-    const stats = await fs.stat(filePath);
-    return stats.size;
+    try {
+        const stats = await fs.stat(filePath);
+        return stats.size;
+    } catch (error) {
+        console.error(`Error getting file size: ${error}`);
+        return 0;
+    }
 };
 
 const getFileContent = async (filePath: string): Promise<string | null> => {
     try {
         const stats = await fs.stat(filePath);
         if (stats.isFile()) {
-            const fileContent = await fs.readFile(filePath, 'utf-8');
-            return fileContent;
+            return await fs.readFile(filePath, 'utf-8');
         }
         return null;
     } catch (error) {
+        console.error(`Error getting file content: ${error}`);
         return null;
     }
 };
@@ -195,7 +200,7 @@ const afs = {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const filePath = sanitizePath(baseDirectory, relativePath);
-            await fs.writeFile(filePath, content);
+            await fs.writeFile(filePath, content, 'utf-8');
         } catch (error: unknown) {
             if (error instanceof Error) {
                 throw new Error(`Error writing file content: ${error.message}`);
