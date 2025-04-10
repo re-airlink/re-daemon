@@ -1,6 +1,7 @@
 import Docker from "dockerode";
 import fs from "fs";
 import path from "path";
+import afs from "../filesystem/fs";
 
 export const docker = new Docker({ socketPath: process.platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock" });
 
@@ -88,7 +89,7 @@ export const getContainerStats = async (id: string) => {
         const cpuUsage = ((cpuDelta / systemCpuDelta) * statsStream.cpu_stats.online_cpus * 100).toFixed(2);
 
         const storageStats = await container.inspect();
-        const storageUsage = 200;
+        const storageUsage = (await afs.getDirectorySizeHandler(id, "./") / (1024 * 1000)).toFixed(2);
         return {
             memory: {
                 usage: memoryUsage,

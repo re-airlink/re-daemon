@@ -4,6 +4,7 @@ import WebSocket, { Server } from 'ws';
 import { attachToContainerWithWS } from './attach';
 import { getContainerStats } from './utils';
 import { sendCommandToContainer } from './command';
+import config from "../../utils/config";
 
 
 export const initializeWebSocketServer = (server: HttpServer): void => {
@@ -28,7 +29,9 @@ export const initializeWebSocketServer = (server: HttpServer): void => {
             const route = urlParts[1];
             const containerId = urlParts[2];
 
+            if (config.DEBUG == true) {
             console.log(urlParts);
+            }
 
             if (!containerId) {
                 ws.send(JSON.stringify({ error: 'Container ID is required in the URL' }));
@@ -45,7 +48,9 @@ export const initializeWebSocketServer = (server: HttpServer): void => {
             if (msg.event === 'auth' && msg.args && msg.args[0] === process.env.key) {
                 if (!isAuthenticated) {
                     isAuthenticated = true;
+                    if (config.DEBUG == true) {
                     console.log(`[DEBUG] Client authenticated for container ${containerId}`);
+                    }
 
                     if (route === 'container') {
                         await attachToContainerWithWS(containerId, ws);
@@ -64,7 +69,9 @@ export const initializeWebSocketServer = (server: HttpServer): void => {
 
                         ws.on('close', () => {
                             if (intervalHandler) clearInterval(intervalHandler);
+                            if (config.DEBUG == true) {
                             console.log(`[DEBUG] Connection closed for containerstatus/${containerId}`);
+                            }
                         });
                     } else {
                         ws.send(JSON.stringify({ error: `Invalid route: ${route}` }));
@@ -78,7 +85,9 @@ export const initializeWebSocketServer = (server: HttpServer): void => {
             }
 
             if (isAuthenticated && msg.event === 'CMD' && route === 'container') {
+                if (config.DEBUG == true) {
                 console.log(`[DEBUG] Command received for container ${containerId}: ${msg.command}`);
+                }
                 if (msg.command) {
                     sendCommandToContainer(containerId, msg.command);
                 }

@@ -13,15 +13,17 @@ export const basicAuthMiddleware = basicAuth({
 export const logLoginAttempts = (req: Request, res: Response, next: () => void) => {
     const authorizationHeader = req.headers.authorization;
   
-    if (authorizationHeader) {
-      const base64Credentials = authorizationHeader.split(' ')[1];
-      const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
-      const [username, password] = credentials.split(':');
-  
-      console.log(`Login attempt: Username = ${username}, Password = ${password}`);
-    } else {
-      console.log('Login attempt: No Authorization header provided');
-    }
+    if (config.DEBUG == true) {
+      if (authorizationHeader) {
+        const base64Credentials = authorizationHeader.split(' ')[1];
+        const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+        const [username, password] = credentials.split(':');
+    
+        console.log(`Login attempt: Username = ${username}, Password = ${password}`);
+      } else {
+        console.log('Login attempt: No Authorization header provided');
+      }
+  }
   
     next();
 };
