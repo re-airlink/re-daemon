@@ -8,7 +8,16 @@ import { stopContainer } from '../handlers/instances/stop';
 import { killContainer } from '../handlers/instances/kill';
 import { deleteContainerAndVolume } from '../handlers/instances/delete';
 import { sendCommandToContainer } from '../handlers/instances/command';
-import { relative } from 'path';
+import fs from 'fs';
+import path from 'path';
+
+const loadJson = (filePath: string) => {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+};
+
+const saveJson = (filePath: string, data: any) => {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+};
 
 const router = Router();
 
@@ -79,13 +88,48 @@ router.post('/container/install', async (req: Request, res: Response) => {
                     continue;
                 }
 
+                const alc = loadJson(path.join(__dirname, '../../storage/alc.json'));
+                const locationsPath = path.join(__dirname, '../../storage/alc/locations.json');
+                const filesDir = path.join(__dirname, '../../storage/alc/files');
+                const locations = fs.existsSync(locationsPath) ? loadJson(locationsPath) : [];
+                const alcEntry = (alc as { Name: string; lasts: number }[]).find((entry) => entry.Name === fileName);
+
                 // Download the file using afs
                 try {
+                    
+                    if (alcEntry) {
+                        let existingLocation = locations.find((loc: any) => loc.Name === fileName && loc.url === resolvedUrl);
+                
+                        const randomNumber = Math.floor(Math.random() * 100000) + 1;
+                        const cachedFileId = `${fileName.replace(/\W+/g, '_')}_${alcEntry.lasts}_${randomNumber}`;
+                        const cachedFilePath = path.join(filesDir, cachedFileId);
+                        const cachedFilePath2 = existingLocation && existingLocation.id ? path.join(filesDir, existingLocation.id) : "";
+                
+                        if (existingLocation) {
+                            console.log(`[CACHE] Using cached version of ${fileName} from ${resolvedUrl}`);
+                            await afs.copy(id, cachedFilePath2, "/", fileName);
+                        } else {
+                            console.log(`[DOWNLOAD] Caching new ${fileName} from ${resolvedUrl}`);
+                            await afs.download(id, resolvedUrl, fileName);
+    
+                            const tempPath = await afs.getDownloadPath(id, fileName);
+                            fs.copyFileSync(tempPath, cachedFilePath);
+    
+                            locations.push({
+                                Name: fileName,
+                                url: resolvedUrl,
+                                id: cachedFileId
+                            });
+                            saveJson(locationsPath, locations);
+                        };
+                     } else {
+
                     if (script.ALVKT  === true) {
                         await afs.download(id, resolvedUrl, fileName, environmentVariables);
                     } else {
                         await afs.download(id, resolvedUrl, fileName);
                         }
+                    }
                     console.log(`Downloaded ${fileName} from ${resolvedUrl} for container ${id}.`);
                 } catch (error) {
                     console.error(`Error downloading file "${fileName}": ${error}`);

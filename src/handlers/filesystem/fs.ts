@@ -196,6 +196,32 @@ const afs = {
         }
     },
 
+    async copy(id: string, sourcePath: string, destinationPath: string, fileName: string): Promise<void> {
+        const baseDirectory = path.resolve(`volumes/${id}`);
+        const src = sourcePath;
+        const dest = sanitizePath(baseDirectory, destinationPath + fileName);
+
+        const stat = await fs.lstat(src);
+    
+        if (stat.isDirectory()) {
+            await fs.mkdir(dest, { recursive: true });
+            const entries = await fs.readdir(src, { withFileTypes: true });
+            for (const entry of entries) {
+                const srcEntry = path.join(src, entry.name);
+                const destEntry = path.join(dest, entry.name);
+                await this.copy(id, path.relative(baseDirectory, srcEntry), path.relative(baseDirectory, destEntry), fileName);
+            }
+        } else {
+            await fs.mkdir(path.dirname(dest), { recursive: true });
+            await fs.copyFile(src, dest);
+        }
+    },
+
+    getDownloadPath(id: string, relativePath: string = '/'): string {
+        const baseDirectory = path.resolve(`volumes/${id}`);
+        return sanitizePath(baseDirectory, relativePath);
+    },
+
     async writeFileContentHandler(id: string, relativePath: string, content: string): Promise<void> {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);

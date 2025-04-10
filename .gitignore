@@ -139,3 +139,6 @@ package-lock.json
 bun.lockb
 # ds_store
 .DS_Store
+
+/storage/alc/files/*
+!/storage/alc/files/.gitignore
