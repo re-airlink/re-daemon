@@ -137,8 +137,10 @@ package-lock.json
 
 # bun
 bun.lockb
+bun.lock
 # ds_store
 .DS_Store
 
 /storage/alc/files/*
 !/storage/alc/files/.gitignore
+/storage/systemStats.json

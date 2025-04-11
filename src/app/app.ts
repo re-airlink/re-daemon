@@ -7,12 +7,14 @@ import { basicAuthMiddleware, logLoginAttempts } from "./middleware";
 import { errorHandler } from "../utils/errorHandler";
 import { initializeWebSocketServer } from "../handlers/instances/initializeWebSocket";
 import { init } from "./init";
+import { initLogger } from '../handlers/stats';
 
 const app: Application = express();
 const server = http.createServer(app);
 
 (async () => {
   try {
+    initLogger();
     await init();
 
     app.use(express.json());
