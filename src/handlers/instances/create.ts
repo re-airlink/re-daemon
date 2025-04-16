@@ -30,7 +30,7 @@ export const startContainer = async (
                 });
             });
         } catch (err) {
-            console.error(`Error pulling image ${Image}:`, err);
+            console.error(`Error pulling image ${image}:`, err);
             return;
         }
 
