@@ -152,6 +152,8 @@ router.post('/container/install', async (req: Request, res: Response) => {
 router.post('/container/start', async (req: Request, res: Response) => {
     const { id, image, ports, env, Memory, Cpu, StartCommand } = req.body;
 
+    console.log(req.body)
+
     if (!id || !image) {
         res.status(400).json({ error: 'Container ID and Image are required.' });
         return;
