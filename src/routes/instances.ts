@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import afs from '../handlers/filesystem/fs';
 
-import { initContainer } from '../handlers/instances/utils';
+import { initContainer, docker } from '../handlers/instances/utils';
 import { attachToContainer } from '../handlers/instances/attach';
 import { startContainer, createInstaller } from '../handlers/instances/create';
 import { stopContainer } from '../handlers/instances/stop';
@@ -96,25 +96,25 @@ router.post('/container/install', async (req: Request, res: Response) => {
 
                 // Download the file using afs
                 try {
-                    
+
                     if (alcEntry) {
                         let existingLocation = locations.find((loc: any) => loc.Name === fileName && loc.url === resolvedUrl);
-                
+
                         const randomNumber = Math.floor(Math.random() * 100000) + 1;
                         const cachedFileId = `${fileName.replace(/\W+/g, '_')}_${alcEntry.lasts}_${randomNumber}`;
                         const cachedFilePath = path.join(filesDir, cachedFileId);
                         const cachedFilePath2 = existingLocation && existingLocation.id ? path.join(filesDir, existingLocation.id) : "";
-                
+
                         if (existingLocation) {
                             console.log(`[CACHE] Using cached version of ${fileName} from ${resolvedUrl}`);
                             await afs.copy(id, cachedFilePath2, "/", fileName);
                         } else {
                             console.log(`[DOWNLOAD] Caching new ${fileName} from ${resolvedUrl}`);
                             await afs.download(id, resolvedUrl, fileName);
-    
+
                             const tempPath = await afs.getDownloadPath(id, fileName);
                             fs.copyFileSync(tempPath, cachedFilePath);
-    
+
                             locations.push({
                                 Name: fileName,
                                 url: resolvedUrl,
@@ -172,7 +172,7 @@ router.post('/container/start', async (req: Request, res: Response) => {
                 return '';
             }
         });
-        
+
     if (updatedStartCommand) {
         environmentVariables['START'] = updatedStartCommand;
     }
@@ -254,7 +254,7 @@ router.post('/container/command', async (req: Request, res: Response) => {
     }
 });
 
-router.delete('/container/delete', async (req: Request, res: Response) => {
+router.delete('/container', async (req: Request, res: Response) => {
     const { id } = req.body;
 
     if (!id) {
@@ -267,6 +267,36 @@ router.delete('/container/delete', async (req: Request, res: Response) => {
     } catch (error) {
         console.error(`Error deleting container: ${error}`);
         res.status(500).json({ error: `Failed to delete container ${id}.` });
+    }
+});
+
+router.get('/container/status', async (req: Request, res: Response) => {
+    const id = req.query.id as string;
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required.' });
+        return;
+    }
+
+    try {
+        const container = docker.getContainer(id);
+        const containerInfo = await container.inspect().catch(() => null);
+
+        if (!containerInfo) {
+            res.status(200).json({ running: false, exists: false });
+            return;
+        }
+
+        res.status(200).json({
+            running: containerInfo.State.Running,
+            exists: true,
+            status: containerInfo.State.Status,
+            startedAt: containerInfo.State.StartedAt,
+            finishedAt: containerInfo.State.FinishedAt
+        });
+    } catch (error) {
+        console.error(`Error getting container status: ${error}`);
+        res.status(500).json({ error: `Failed to get status for container ${id}.` });
     }
 });
 
