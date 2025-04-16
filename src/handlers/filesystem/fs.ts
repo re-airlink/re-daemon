@@ -62,7 +62,12 @@ const afs = {
         const oldFilePath = sanitizePath(baseDirectory, oldPath);
         const newFilePath = sanitizePath(baseDirectory, newPath);
 
-        // if file rename file else if folder rename folder 
+        const newFileDir = path.dirname(newFilePath);
+        if (!fsN.existsSync(newFileDir)) {
+            await fs.mkdir(newFileDir, { recursive: true });
+        }
+
+        // if file rename file else if folder rename folder
         if (fsN.lstatSync(oldFilePath).isFile()) {
             if (fsN.existsSync(newFilePath)) {
                 throw new Error('File already exists');
@@ -78,34 +83,34 @@ const afs = {
 
     async list(id: string, relativePath: string = '/', filter?: string) {
         const currentTime = Date.now();
-    
+
         if (!requestCache.has(id)) {
             requestCache.set(id, { lastRequest: currentTime, count: 0, cache: null, path: relativePath });
         }
-    
+
         const rateData = requestCache.get(id);
-    
+
         if (rateData.cache && currentTime - rateData.lastRequest < 1000 && rateData.path === relativePath) {
             console.log('Cache hit', relativePath);
             return rateData.cache;
         }
-    
+
         if (currentTime - rateData.lastRequest < 1000) {
             rateData.count += 1;
         } else {
             rateData.count = 1;
         }
-    
+
         rateData.lastRequest = currentTime;
         rateData.path = relativePath;
-    
+
         if (rateData.count > 5) {
             rateData.cache = { error: 'Too many requests, please wait 3 seconds.' };
             console.log('Too many requests, please wait 3 seconds.');
             setTimeout(() => requestCache.delete(id), 3000);
             return rateData.cache;
         }
-    
+
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const targetDirectory = sanitizePath(baseDirectory, relativePath);
@@ -114,7 +119,7 @@ const afs = {
                 const ext = path.extname(dirent.name).substring(1);
                 const category = await fileSpecifier.getCategory(ext);
                 let size = null;
-    
+
                 if (dirent.isDirectory()) {
                     const dirPath = path.join(targetDirectory, dirent.name);
                     size = await getDirectorySize(dirPath);
@@ -122,7 +127,7 @@ const afs = {
                     const filePath = path.join(targetDirectory, dirent.name);
                     size = await getFileSize(filePath);
                 }
-    
+
                 return {
                     name: dirent.name,
                     type: dirent.isDirectory() ? 'directory' : 'file',
@@ -131,13 +136,13 @@ const afs = {
                     size: size
                 };
             }));
-    
+
             const limitedResults = results.slice(0, 256);
-    
+
             if (filter) {
                 return limitedResults.filter(item => item.name.includes(filter));
             }
-    
+
             rateData.cache = limitedResults;
             return limitedResults;
         } catch (error: unknown) {
@@ -202,7 +207,7 @@ const afs = {
         const dest = sanitizePath(baseDirectory, destinationPath + fileName);
 
         const stat = await fs.lstat(src);
-    
+
         if (stat.isDirectory()) {
             await fs.mkdir(dest, { recursive: true });
             const entries = await fs.readdir(src, { withFileTypes: true });
@@ -269,19 +274,19 @@ const afs = {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const filePath = sanitizePath(baseDirectory, relativePath);
-    
+
             const response = await axios({
                 method: 'GET',
                 url: url,
                 responseType: 'arraybuffer'
             });
-    
+
             if (response.status !== 200) {
                 throw new Error(`Failed to download file from ${url}: ${response.statusText}`);
             }
-    
+
             let fileContent = response.data;
-    
+
             if (environmentVariables) {
                 const regex = /\$ALVKT\((\w+)\)/g;
                 fileContent = fileContent.toString().replace(regex, (_: string, variableName: string) => {
@@ -314,47 +319,47 @@ const afs = {
     async zip(id: string, filePaths: string[] | string, zipname: string): Promise<string> {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
-            
+
             const files = (Array.isArray(filePaths) ? filePaths : [filePaths])
-                .flatMap(file => 
-                    typeof file === 'string' 
-                        ? file.split(',').map(f => f.trim()) 
+                .flatMap(file =>
+                    typeof file === 'string'
+                        ? file.split(',').map(f => f.trim())
                         : file
                 )
                 .map(file => ({
                     cleanPath: file.replace(/[\[\]"']/g, '').trim(),
                     fullPath: path.join(baseDirectory, file.replace(/[\[\]"']/g, '').trim())
                 }));
-    
+
             const firstFileDir = path.dirname(files[0].fullPath);
             const zipPath = path.join(firstFileDir, `${zipname}.zip`);
-            
+
             await fs.mkdir(path.dirname(zipPath), { recursive: true });
-    
+
             const zipStream = fsN.createWriteStream(zipPath);
             const archive = archiver('zip', { zlib: { level: 9 } });
-    
+
             return new Promise((resolve, reject) => {
                 archive.pipe(zipStream);
-    
+
                 archive.on('error', (err) => {
                     reject(new Error(`Archive error: ${err.message}`));
                 });
-    
+
                 zipStream.on('close', () => {
                     resolve(zipPath);
                 });
-    
+
                 (async () => {
                     for (const { cleanPath, fullPath } of files) {
                         try {
                             const exists = await fs.access(fullPath).then(() => true).catch(() => false);
-    
+
                             if (!exists) {
                                 console.warn(`File not found: ${cleanPath}`);
                                 continue;
                             }
-    
+
                             const stats = await fs.stat(fullPath);
                             if (stats.isDirectory()) {
                                 archive.directory(fullPath, cleanPath);
@@ -365,7 +370,7 @@ const afs = {
                             console.warn(`Error processing ${cleanPath}:`, err);
                         }
                     }
-    
+
                     await archive.finalize();
                 })().catch((err) => {
                     reject(new Error(`Error during zipping process: ${err.message}`));
@@ -414,7 +419,7 @@ const afs = {
             }
         }
     },
-    
+
 };
 
 async function detectArchiveType(filePath: string): Promise<string | null> {
@@ -447,7 +452,7 @@ async function extractArchive(archivePath: string, extractPath: string, type: st
             if (fsN.existsSync(explorerPath)) {
                 command = explorerPath;
                 args = ['/select,', archivePath];
-            } 
+            }
             // WinRAR
             else if (fsN.existsSync('C:\\Program Files\\WinRAR\\WinRAR.exe')) {
                 command = 'C:\\Program Files\\WinRAR\\WinRAR.exe';

@@ -180,7 +180,7 @@ router.delete('/fs/rm', async (req: Request, res: Response) => {
         } else {
             res.status(500).json({ error: 'An unknown error occurred.' });
         }
-    } 
+    }
 });
 
 router.post('/fs/zip', async (req: Request, res: Response) => {
@@ -231,6 +231,7 @@ router.post('/fs/rename', async (req: Request, res: Response) => {
     const id = typeof req.body.id === 'string' ? req.body.id : undefined;
     const relativePath = typeof req.body.path === 'string' ? req.body.path : '/';
     const newName = typeof req.body.newName === 'string' ? req.body.newName : '';
+    const newPath = typeof req.body.newPath === 'string' ? req.body.newPath : newName;
 
     if (!id) {
         res.status(400).json({ error: 'Container ID is required and must be a string.' });
@@ -238,7 +239,7 @@ router.post('/fs/rename', async (req: Request, res: Response) => {
     }
 
     try {
-        await afs.rename(id, relativePath, newName);
+        await afs.rename(id, relativePath, newPath);
         res.json({ message: 'File successfully renamed.' });
     } catch (error) {
         if (error instanceof Error) {
