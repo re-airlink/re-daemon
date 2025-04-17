@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import afs from '../handlers/filesystem/fs';
 
-import { initContainer, docker } from '../handlers/instances/utils';
+import { initContainer, docker, getContainerStats } from '../handlers/instances/utils';
 import { attachToContainer } from '../handlers/instances/attach';
 import { startContainer, createInstaller } from '../handlers/instances/create';
 import { stopContainer } from '../handlers/instances/stop';
@@ -297,6 +297,29 @@ router.get('/container/status', async (req: Request, res: Response) => {
     } catch (error) {
         console.error(`Error getting container status: ${error}`);
         res.status(500).json({ error: `Failed to get status for container ${id}.` });
+    }
+});
+
+router.get('/container/stats', async (req: Request, res: Response) => {
+    const id = req.query.id as string;
+
+    if (!id) {
+        res.status(400).json({ error: 'Container ID is required.' });
+        return;
+    }
+
+    try {
+        const stats = await getContainerStats(id);
+
+        if (!stats) {
+            res.status(200).json({ running: false, exists: false });
+            return;
+        }
+
+        res.status(200).json(stats);
+    } catch (error) {
+        console.error(`Error getting container stats: ${error}`);
+        res.status(500).json({ error: `Failed to get stats for container ${id}.` });
     }
 });
 
