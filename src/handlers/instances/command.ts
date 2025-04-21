@@ -1,13 +1,14 @@
 import { docker } from './utils';
+import logger from '../../utils/logger';
 
 export const sendCommandToContainer = async (id: string, command: string): Promise<void> => {
     try {
-        console.log(`Sending command to container ${id}: ${command}`);
+        logger.info(`Sending command to container ${id}: ${command}`);
         const container = docker.getContainer(id);
         const containerInfo = await container.inspect();
 
         if (!containerInfo.State.Running) {
-            console.error(`Container ${id} is not running.`);
+            logger.warn(`Container ${id} is not running.`);
             return;
         }
 
@@ -17,17 +18,18 @@ export const sendCommandToContainer = async (id: string, command: string): Promi
         stream.end();
 
         stream.on('data', (data: Buffer) => {
-            //console.log(`[${id}] STDOUT: ${data.toString()}`);
+            // Uncomment for debugging
+            // logger.debug(`[${id}] STDOUT: ${data.toString()}`);
         });
 
         stream.on('error', (error: Error) => {
-            console.error(`[${id}] Error: ${error.message}`);
+            logger.error(`[${id}] Stream error:`, error);
         });
 
         stream.on('end', () => {
-            console.log(`[${id}] Command stream ended.`);
+            logger.debug(`[${id}] Command stream ended.`);
         });
     } catch (error) {
-        console.error(`Failed to send command to container ${id}: ${error}`);
+        logger.error(`Failed to send command to container ${id}:`, error);
     }
 };

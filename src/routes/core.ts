@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { meta } from '../../storage/config.json';
 import config from '../utils/config';
 import { getTotalStats, getCurrentStats, getSystemStats, saveStats } from '../handlers/stats';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ setInterval(async () => {
     const stats = await getCurrentStats();
     saveStats(stats);
   } catch (error) {
-    console.error('Error logging stats:', error);
+    logger.error('Error logging stats:', error);
   }
 }, STATS_INTERVAL);
 
@@ -51,7 +52,7 @@ router.get('/stats', async (_req: Request, res: Response<StatsResponse | { error
 
     res.json({ totalStats, uptime });
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    logger.error('Error fetching stats:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });

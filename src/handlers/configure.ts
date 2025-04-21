@@ -27,7 +27,7 @@ async function updateEnvFile(panelUrl: string, key: string): Promise<void> {
 
     const remoteIp = panelUrl
         .replace(/https?:\/\//, '')
-        .split(':')[0];    
+        .split(':')[0];
 
     envConfig.remote = remoteIp;
     envConfig.key = key;

@@ -2,6 +2,7 @@ import os from 'os';
 import fs from 'fs';
 import path from 'path';
 import osUtils from 'os-utils';
+import logger from '../utils/logger';
 
 const storagePath = path.join(__dirname, '../../storage/systemStats.json');
 const tempStoragePath = path.join(__dirname, '../../storage/systemStats.tmp.json');
@@ -66,11 +67,11 @@ export function saveStats(stats: SystemStat): void {
 
     fs.writeFile(tempStoragePath, JSON.stringify(statsLog, null, 2), (err) => {
       if (err) {
-        console.error('Error saving stats to temp JSON file:', err);
+        logger.error('Error saving stats to temp JSON file:', err);
       } else {
         fs.rename(tempStoragePath, storagePath, (err) => {
           if (err) {
-            console.error('Error renaming temp file to JSON file:', err);
+            logger.error('Error renaming temp file to JSON file:', err);
           }
         });
       }
@@ -88,7 +89,7 @@ export function getTotalStats(): SystemStat[] {
         }
       }
     } catch (error) {
-      console.error('Error reading total stats:', error);
+      logger.error('Error reading total stats:', error);
     }
     return [];
   }
@@ -107,19 +108,19 @@ export function initLogger(): void {
           cleanOldEntries();
           fs.writeFile(storagePath, JSON.stringify(statsLog, null, 2), (err) => {
             if (err) {
-              console.error('Error saving stats to JSON file:', err);
+              logger.error('Error saving stats to JSON file:', err);
             }
           });
         } else {
-          console.error('Error parsing JSON data: Expected array but got:', parsedData);
+          logger.error('Error parsing JSON data: Expected array but got:', parsedData);
           statsLog = [];
         }
       } else {
-        console.warn('Stats file is empty, initializing with empty statsLog.');
+        logger.warn('Stats file is empty, initializing with empty statsLog.');
         statsLog = [];
       }
     } catch (err) {
-      console.error('Error reading stats from JSON file:', err);
+      logger.error('Error reading stats from JSON file:', err);
       statsLog = [];
     }
   }
