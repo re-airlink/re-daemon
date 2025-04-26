@@ -138,7 +138,6 @@ router.post('/container/install', async (req: Request, res: Response) => {
             }
         }
         const relativePath = "/airlink/installed.txt";
-        console.log('test');
 
         afs.writeFileContentHandler(id, relativePath, "Installed: true")
 
