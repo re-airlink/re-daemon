@@ -12,10 +12,20 @@ export const sendCommandToContainer = async (id: string, command: string): Promi
             return;
         }
 
-        const stream = await container.attach({ stream: true, stdin: true, stdout: true, stderr: false, hijack: true, logs: false });
+        // Create a clean stream without including the attach options in the output
+        const exec = await container.exec({
+            Cmd: ['sh', '-c', command],
+            AttachStdin: false,
+            AttachStdout: true,
+            AttachStderr: true
+        });
 
-        stream.write(`${command}\n`);
-        stream.end();
+        const stream = await exec.start({
+            hijack: true,
+            stdin: false,
+            stdout: true,
+            stderr: true
+        });
 
         stream.on('data', (data: Buffer) => {
             // Uncomment for debugging
