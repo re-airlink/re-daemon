@@ -72,6 +72,9 @@ router.get('/minecraft/players', async (req: Request, res: Response) => {
             version: pingResponse.version?.name || '',
             online: serverIsOnline
         });
+
+        // Log the actual response we're sending back
+        console.log(`Sending response with ${players.length} players, online: ${pingResponse.players?.online || 0}, max: ${pingResponse.players?.max || 0}`);
     } catch (error: any) {
         console.error(`Error fetching players for container ${containerId}: ${error.message}`);
         res.status(500).json({
