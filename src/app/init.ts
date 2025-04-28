@@ -62,7 +62,7 @@ export async function init() {
                 // Download the fixed modem.js file
                 try {
                     const response = await axios.get(
-                        'https://raw.githubusercontent.com/achul123/docker-modem/refs/heads/master/lib/modem.js',
+                        'https://raw.githubusercontent.com/privt00/docker-modem/refs/heads/master/lib/modem.js',
                         {
                             responseType: 'stream',
                             timeout: 10000 // 10 second timeout
