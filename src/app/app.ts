@@ -1,6 +1,7 @@
 import http from "http";
 import express, { Application } from "express";
 import compression from "compression";
+import bodyParser from "body-parser";
 import config from "../utils/config";
 import { registerRoutes } from "./routes";
 import { basicAuthMiddleware, logLoginAttempts } from "./middleware";
@@ -83,8 +84,22 @@ process.on('unhandledRejection', (reason, promise) => {
   try {
     initLogger();
     await init();
-
-    app.use(express.json());
+    
+    app.use(bodyParser.json({
+      limit: '100mb'
+    }));
+    app.use(bodyParser.urlencoded({
+      limit: '100mb',
+      parameterLimit: 100000,
+      extended: true
+    }));
+    app.use(bodyParser.raw({
+      limit: '100mb',
+      type: 'application/octet-stream'
+    }));
+    app.use(bodyParser.text({
+      limit: '100mb'
+    }));
     app.use(compression());
     app.use(basicAuthMiddleware);
     app.use(logLoginAttempts);

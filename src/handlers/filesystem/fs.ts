@@ -227,18 +227,28 @@ const afs = {
         return sanitizePath(baseDirectory, relativePath);
     },
 
-    async writeFileContentHandler(id: string, relativePath: string, content: string): Promise<void> {
+    async writeFileContentHandler(id: string, relativePath: string, content: string | Buffer): Promise<void> {
         try {
             const baseDirectory = path.resolve(`volumes/${id}`);
             const filePath = sanitizePath(baseDirectory, relativePath);
             const dir = path.dirname(filePath);
+
+            console.log(`Writing file to ${filePath}, content type: ${typeof content}`);
             await fs.mkdir(dir, { recursive: true });
-            await fs.writeFile(filePath, content, 'utf-8');
+
+            if (typeof content === 'string') {
+                await fs.writeFile(filePath, content, 'utf-8');
+            } else {
+                await fs.writeFile(filePath, content);
+            }
+            console.log(`File written successfully to ${filePath}`);
         } catch (error: unknown) {
             if (error instanceof Error) {
                 console.error(`Error writing file content: ${error.message}`);
+                throw error;
             } else {
                 console.error('An unknown error occurred during file writing.');
+                throw new Error('An unknown error occurred during file writing.');
             }
         }
     },
