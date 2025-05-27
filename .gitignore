@@ -141,6 +141,17 @@ bun.lock
 # ds_store
 .DS_Store
 
+# Storage directory - exclude dynamic runtime files
 /storage/alc/files/*
 !/storage/alc/files/.gitignore
 /storage/systemStats.json
+/storage/alc/locations.json
+/storage/alc.json
+
+# Backup files
+*.backup
+*.tmp
+*.temp
+
+# Runtime generated files
+/storage/config.json

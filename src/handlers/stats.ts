@@ -61,21 +61,34 @@ function cleanOldEntries(): void {
 }
 
 export function saveStats(stats: SystemStat): void {
-  if (stats && stats.timestamp) {
+  if (!stats || !stats.timestamp) {
+    logger.warn('Invalid stats data provided to saveStats');
+    return;
+  }
+
+  try {
     statsLog.push(stats);
     cleanOldEntries();
 
     fs.writeFile(tempStoragePath, JSON.stringify(statsLog, null, 2), (err) => {
       if (err) {
         logger.error('Error saving stats to temp JSON file:', err);
-      } else {
-        fs.rename(tempStoragePath, storagePath, (err) => {
-          if (err) {
-            logger.error('Error renaming temp file to JSON file:', err);
-          }
-        });
+        return;
       }
+
+      fs.rename(tempStoragePath, storagePath, (err) => {
+        if (err) {
+          logger.error('Error renaming temp file to JSON file:', err);
+          fs.unlink(tempStoragePath, (unlinkErr) => {
+            if (unlinkErr) {
+              logger.error('Error cleaning up temp file:', unlinkErr);
+            }
+          });
+        }
+      });
     });
+  } catch (error) {
+    logger.error('Unexpected error in saveStats:', error);
   }
 }
 

@@ -12,11 +12,29 @@ import fs from 'fs';
 import path from 'path';
 
 const loadJson = (filePath: string) => {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    try {
+        if (!fs.existsSync(filePath)) {
+            return [];
+        }
+        const content = fs.readFileSync(filePath, 'utf-8');
+        return content.trim() ? JSON.parse(content) : [];
+    } catch (error) {
+        console.error(`Error loading JSON from ${filePath}:`, error);
+        return [];
+    }
 };
 
 const saveJson = (filePath: string, data: any) => {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    try {
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (error) {
+        console.error(`Error saving JSON to ${filePath}:`, error);
+        throw error;
+    }
 };
 
 const router = Router();
@@ -91,7 +109,7 @@ router.post('/container/install', async (req: Request, res: Response) => {
                 const alc = loadJson(path.join(__dirname, '../../storage/alc.json'));
                 const locationsPath = path.join(__dirname, '../../storage/alc/locations.json');
                 const filesDir = path.join(__dirname, '../../storage/alc/files');
-                const locations = fs.existsSync(locationsPath) ? loadJson(locationsPath) : [];
+                const locations = loadJson(locationsPath);
                 const alcEntry = (alc as { Name: string; lasts: number }[]).find((entry) => entry.Name === fileName);
 
                 // Download the file using afs

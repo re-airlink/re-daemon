@@ -20,9 +20,9 @@ export const logLoginAttempts = (req: Request, res: Response, next: () => void) 
       if (authorizationHeader) {
         const base64Credentials = authorizationHeader.split(' ')[1];
         const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
-        const [username, password] = credentials.split(':');
+        const [username] = credentials.split(':');
 
-        logger.debug(`Login attempt: Username = ${username}, Password = ${password}`);
+        logger.debug(`Login attempt: Username = ${username}, Password = [REDACTED]`);
       } else {
         logger.debug('Login attempt: No Authorization header provided');
       }

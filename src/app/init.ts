@@ -65,22 +65,32 @@ export async function init() {
                         'https://raw.githubusercontent.com/privt00/docker-modem/refs/heads/master/lib/modem.js',
                         {
                             responseType: 'stream',
-                            timeout: 10000 // 10 second timeout
+                            timeout: 30000, // 30 second timeout
+                            maxRedirects: 5,
+                            validateStatus: (status) => status === 200
                         }
                     );
 
                     // Backup the original file if it exists
                     if (fs.existsSync(modemPath)) {
                         const backupPath = path.join(libDir, 'modem.js.backup');
-                        fs.copyFileSync(modemPath, backupPath);
-                        logger.info('Original modem.js backed up.');
+                        try {
+                            fs.copyFileSync(modemPath, backupPath);
+                            logger.info('Original modem.js backed up.');
+                        } catch (backupError) {
+                            logger.warn('Failed to backup original modem.js:', backupError);
+                        }
                     }
 
                     // Save the new file
                     await new Promise<void>((resolve, reject) => {
-                        response.data.pipe(fs.createWriteStream(modemPath))
-                            .on('finish', () => resolve())
-                            .on('error', (err: Error) => reject(err));
+                        const writeStream = fs.createWriteStream(modemPath);
+
+                        writeStream.on('finish', () => resolve());
+                        writeStream.on('error', (err: Error) => reject(err));
+
+                        response.data.on('error', (err: Error) => reject(err));
+                        response.data.pipe(writeStream);
                     });
 
                     // Create the lock file to prevent future executions

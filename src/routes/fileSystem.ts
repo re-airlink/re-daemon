@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import afs from '../handlers/filesystem/fs';
 import path from 'path';
 import fs from 'fs/promises';
+import { validateContainerId, validatePath, validateFileName } from '../utils/validation';
 
 const router = Router();
 
@@ -126,6 +127,16 @@ router.post('/fs/file/content', async (req: Request, res: Response) => {
 
     if (!id) {
         res.status(400).json({ error: 'Container ID is required and must be a string.' });
+        return;
+    }
+
+    if (!validateContainerId(id)) {
+        res.status(400).json({ error: 'Invalid container ID format.' });
+        return;
+    }
+
+    if (!validatePath(relativePath)) {
+        res.status(400).json({ error: 'Invalid file path.' });
         return;
     }
 
@@ -274,9 +285,24 @@ router.post('/fs/upload', async (req: Request, res: Response) => {
         return;
     }
 
+    if (!validateContainerId(id)) {
+        res.status(400).json({ error: 'Invalid container ID format.' });
+        return;
+    }
+
     if (!fileName) {
         console.error('Upload error: File name is required');
         res.status(400).json({ error: 'File name is required.' });
+        return;
+    }
+
+    if (!validateFileName(fileName)) {
+        res.status(400).json({ error: 'Invalid file name.' });
+        return;
+    }
+
+    if (!validatePath(relativePath)) {
+        res.status(400).json({ error: 'Invalid file path.' });
         return;
     }
 

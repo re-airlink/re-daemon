@@ -33,7 +33,7 @@ async function updateEnvFile(panelUrl: string, key: string): Promise<void> {
     envConfig.key = key;
 
     if (!envConfig.version) envConfig.version = '1.0.0';
-    if (!envConfig.port) envConfig.port = '3502';
+    if (!envConfig.port) envConfig.port = '3002';
 
     const newEnvContent = Object.entries(envConfig)
         .map(([key, value]) => `${key}=${value}`)
