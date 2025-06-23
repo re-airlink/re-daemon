@@ -27,13 +27,13 @@ async function updateEnvFile(panelUrl: string, key: string): Promise<void> {
 
     const remoteIp = panelUrl
         .replace(/https?:\/\//, '')
-        .split(':')[0];
+        .split(':')[0];    
 
     envConfig.remote = remoteIp;
     envConfig.key = key;
 
     if (!envConfig.version) envConfig.version = '1.0.0';
-    if (!envConfig.port) envConfig.port = '3002';
+    if (!envConfig.port) envConfig.port = '3502';
 
     const newEnvContent = Object.entries(envConfig)
         .map(([key, value]) => `${key}=${value}`)

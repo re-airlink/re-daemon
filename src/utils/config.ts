@@ -7,7 +7,6 @@ interface Config {
     remote: string;
     key: string;
     port: number;
-    DEBUG: boolean;
     environment: string;
     version: string;
 }
@@ -24,7 +23,6 @@ const config: Config = {
   remote: getEnvVar("remote", "localhost"),
   key: getEnvVar("key", "00000000000000000000000000000000"),
   port: parseInt(getEnvVar("port", "3002"), 10),
-  DEBUG: false,
   environment: getEnvVar("environment", "development"),
   version: getEnvVar("version", "1.0.0"),
 };

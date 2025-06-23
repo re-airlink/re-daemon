@@ -1,10 +1,9 @@
 import { docker } from './utils';
 import WebSocket, { Server } from 'ws';
-import logger from '../../utils/logger';
 
 export const attachToContainerWithWS = async (id: string, ws: WebSocket): Promise<void> => {
     try {
-        logger.info(`Attaching to container ${id}...`);
+        console.log(`Attaching to container ${id}...`);
         const container = docker.getContainer(id);
 
         const logStream = await container.logs({
@@ -19,13 +18,13 @@ export const attachToContainerWithWS = async (id: string, ws: WebSocket): Promis
         });
 
         ws.on('close', () => {
-            logger.info(`WebSocket connection closed for container ${id}`);
+            console.log(`WebSocket connection closed for container ${id}`);
         });
 
-        logger.success(`Attached to container ${id} successfully.`);
+        console.log(`Attached to container ${id} successfully.`);
     } catch (error) {
-        logger.error(`Failed to attach to container ${id}:`, error);
-
+        console.error(`Failed to attach to container ${id}:`, error);
+        
         if (ws.readyState === WebSocket.OPEN) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             ws.send(JSON.stringify({ error: `Failed to attach to container ${id}: ${errorMessage}` }));
@@ -35,20 +34,20 @@ export const attachToContainerWithWS = async (id: string, ws: WebSocket): Promis
 
 export const attachToContainer = async (id: string): Promise<void> => {
     try {
-        logger.info(`Attaching to container ${id}...`);
+        console.log(`Attaching to container ${id}...`);
         const container = docker.getContainer(id);
         const containerInfo = await container.inspect();
 
         if (!containerInfo.State.Running) {
-            logger.warn(`Container ${id} is not running.`);
+            console.error(`Container ${id} is not running.`);
             return;
         }
 
         const stream = await container.attach({ stream: true, stdin: true, stdout: true, stderr: true });
         stream.pipe(process.stdout);
 
-        logger.success(`[${id}] Attached successfully.`);
+        console.log(`[${id}] Attached successfully.`);
     } catch (error) {
-        logger.error(`Failed to attach to container ${id}:`, error);
+        console.error(`Failed to attach to container ${id}: ${error}`);
     }
 };

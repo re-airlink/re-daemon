@@ -1,41 +1,13 @@
 import { Router, Request, Response } from 'express';
 import afs from '../handlers/filesystem/fs';
 
-import { initContainer, docker, getContainerStats } from '../handlers/instances/utils';
+import { initContainer } from '../handlers/instances/utils';
 import { attachToContainer } from '../handlers/instances/attach';
 import { startContainer, createInstaller } from '../handlers/instances/create';
 import { stopContainer } from '../handlers/instances/stop';
 import { killContainer } from '../handlers/instances/kill';
 import { deleteContainerAndVolume } from '../handlers/instances/delete';
 import { sendCommandToContainer } from '../handlers/instances/command';
-import fs from 'fs';
-import path from 'path';
-
-const loadJson = (filePath: string) => {
-    try {
-        if (!fs.existsSync(filePath)) {
-            return [];
-        }
-        const content = fs.readFileSync(filePath, 'utf-8');
-        return content.trim() ? JSON.parse(content) : [];
-    } catch (error) {
-        console.error(`Error loading JSON from ${filePath}:`, error);
-        return [];
-    }
-};
-
-const saveJson = (filePath: string, data: any) => {
-    try {
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-    } catch (error) {
-        console.error(`Error saving JSON to ${filePath}:`, error);
-        throw error;
-    }
-};
 
 const router = Router();
 
@@ -106,48 +78,13 @@ router.post('/container/install', async (req: Request, res: Response) => {
                     continue;
                 }
 
-                const alc = loadJson(path.join(__dirname, '../../storage/alc.json'));
-                const locationsPath = path.join(__dirname, '../../storage/alc/locations.json');
-                const filesDir = path.join(__dirname, '../../storage/alc/files');
-                const locations = loadJson(locationsPath);
-                const alcEntry = (alc as { Name: string; lasts: number }[]).find((entry) => entry.Name === fileName);
-
                 // Download the file using afs
                 try {
-
-                    if (alcEntry) {
-                        let existingLocation = locations.find((loc: any) => loc.Name === fileName && loc.url === resolvedUrl);
-
-                        const randomNumber = Math.floor(Math.random() * 100000) + 1;
-                        const cachedFileId = `${fileName.replace(/\W+/g, '_')}_${alcEntry.lasts}_${randomNumber}`;
-                        const cachedFilePath = path.join(filesDir, cachedFileId);
-                        const cachedFilePath2 = existingLocation && existingLocation.id ? path.join(filesDir, existingLocation.id) : "";
-
-                        if (existingLocation) {
-                            console.log(`[CACHE] Using cached version of ${fileName} from ${resolvedUrl}`);
-                            await afs.copy(id, cachedFilePath2, "/", fileName);
-                        } else {
-                            console.log(`[DOWNLOAD] Caching new ${fileName} from ${resolvedUrl}`);
-                            await afs.download(id, resolvedUrl, fileName);
-
-                            const tempPath = await afs.getDownloadPath(id, fileName);
-                            fs.copyFileSync(tempPath, cachedFilePath);
-
-                            locations.push({
-                                Name: fileName,
-                                url: resolvedUrl,
-                                id: cachedFileId
-                            });
-                            saveJson(locationsPath, locations);
-                        };
-                     } else {
-
                     if (script.ALVKT  === true) {
                         await afs.download(id, resolvedUrl, fileName, environmentVariables);
                     } else {
                         await afs.download(id, resolvedUrl, fileName);
                         }
-                    }
                     console.log(`Downloaded ${fileName} from ${resolvedUrl} for container ${id}.`);
                 } catch (error) {
                     console.error(`Error downloading file "${fileName}": ${error}`);
@@ -155,9 +92,6 @@ router.post('/container/install', async (req: Request, res: Response) => {
                 }
             }
         }
-        const relativePath = "/airlink/installed.txt";
-
-        afs.writeFileContentHandler(id, relativePath, "Installed: true")
 
         res.status(200).json({ message: `Container ${id} installed successfully.` });
     } catch (error) {
@@ -168,8 +102,6 @@ router.post('/container/install', async (req: Request, res: Response) => {
 
 router.post('/container/start', async (req: Request, res: Response) => {
     const { id, image, ports, env, Memory, Cpu, StartCommand } = req.body;
-
-    console.log(req.body)
 
     if (!id || !image) {
         res.status(400).json({ error: 'Container ID and Image are required.' });
@@ -189,7 +121,7 @@ router.post('/container/start', async (req: Request, res: Response) => {
                 return '';
             }
         });
-
+        
     if (updatedStartCommand) {
         environmentVariables['START'] = updatedStartCommand;
     }
@@ -271,7 +203,7 @@ router.post('/container/command', async (req: Request, res: Response) => {
     }
 });
 
-router.delete('/container', async (req: Request, res: Response) => {
+router.delete('/container/delete', async (req: Request, res: Response) => {
     const { id } = req.body;
 
     if (!id) {
@@ -284,59 +216,6 @@ router.delete('/container', async (req: Request, res: Response) => {
     } catch (error) {
         console.error(`Error deleting container: ${error}`);
         res.status(500).json({ error: `Failed to delete container ${id}.` });
-    }
-});
-
-router.get('/container/status', async (req: Request, res: Response) => {
-    const id = req.query.id as string;
-
-    if (!id) {
-        res.status(400).json({ error: 'Container ID is required.' });
-        return;
-    }
-
-    try {
-        const container = docker.getContainer(id);
-        const containerInfo = await container.inspect().catch(() => null);
-
-        if (!containerInfo) {
-            res.status(200).json({ running: false, exists: false });
-            return;
-        }
-
-        res.status(200).json({
-            running: containerInfo.State.Running,
-            exists: true,
-            status: containerInfo.State.Status,
-            startedAt: containerInfo.State.StartedAt,
-            finishedAt: containerInfo.State.FinishedAt
-        });
-    } catch (error) {
-        console.error(`Error getting container status: ${error}`);
-        res.status(500).json({ error: `Failed to get status for container ${id}.` });
-    }
-});
-
-router.get('/container/stats', async (req: Request, res: Response) => {
-    const id = req.query.id as string;
-
-    if (!id) {
-        res.status(400).json({ error: 'Container ID is required.' });
-        return;
-    }
-
-    try {
-        const stats = await getContainerStats(id);
-
-        if (!stats) {
-            res.status(200).json({ running: false, exists: false });
-            return;
-        }
-
-        res.status(200).json(stats);
-    } catch (error) {
-        console.error(`Error getting container stats: ${error}`);
-        res.status(500).json({ error: `Failed to get stats for container ${id}.` });
     }
 });
 
